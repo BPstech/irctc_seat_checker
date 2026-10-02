@@ -1,0 +1,34 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Chrome / Selenium logs & drivers
+chromedriver.exe
+chromedriver
+*.log
+
+# Sensitive environment variables
+.env
+.env.local
+.env.*.local
+
+# Vercel build output
+.vercel/
+
+# Temporary / scratch test scripts
+scratch/
+test_*.py
+run_accuracy_test.py
+
+# Operating system files
+.DS_Store
+Thumbs.db
