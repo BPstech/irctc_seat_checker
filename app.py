@@ -203,6 +203,14 @@ def run_seat_search(search_id, train_no, origin, destination, journey_date, clas
     finally:
         search_in_progress[search_id] = False
 
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({
+        'status': 'online',
+        'service': 'IRCTC Green Seat Finder API',
+        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+    })
+
 if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
     import shutil
@@ -212,8 +220,9 @@ if __name__ == '__main__':
     elif os.path.exists('irctc_frontend.html'):
         shutil.copy('irctc_frontend.html', os.path.join('templates', 'irctc_frontend.html'))
     
+    port = int(os.environ.get('PORT', 5000))
     print("=" * 60)
     print("       🚂 IRCTC Green Seat Finder Web Server")
-    print("       Running at: http://localhost:5000")
+    print(f"       Running at: http://localhost:{port}")
     print("=" * 60)
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=port)

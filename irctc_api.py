@@ -71,9 +71,29 @@ class IRCTCService:
             opts.add_argument('--no-sandbox')
             opts.add_argument('--disable-dev-shm-usage')
             opts.add_argument('--disable-gpu')
+            opts.add_argument('--disable-software-rasterizer')
             opts.add_argument('--disable-blink-features=AutomationControlled')
             opts.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-            self.driver = webdriver.Chrome(options=opts)
+
+            import shutil
+            from selenium.webdriver.chrome.service import Service
+
+            # Detect Linux/Docker Chromium binary location if available
+            chrome_bin = (
+                shutil.which('chromium') or 
+                shutil.which('chromium-browser') or 
+                shutil.which('google-chrome') or
+                shutil.which('google-chrome-stable')
+            )
+            if chrome_bin:
+                opts.binary_location = chrome_bin
+
+            driver_bin = shutil.which('chromedriver')
+            if driver_bin:
+                self.driver = webdriver.Chrome(service=Service(executable_path=driver_bin), options=opts)
+            else:
+                self.driver = webdriver.Chrome(options=opts)
+
             self.driver.get('https://www.irctc.co.in/online-charts/')
             time.sleep(2)
             logger.info("Chrome driver initialized and navigated to IRCTC online charts.")
