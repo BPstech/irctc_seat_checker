@@ -1238,6 +1238,8 @@
             handleDateChange();
         });
 
+        const trainInfoClientCache = new Map();
+
         // Train Number input event: auto clean everything and fetch live info
         trainNoInput.addEventListener('input', function() {
             const val = this.value.trim();
@@ -1249,41 +1251,30 @@
             if (val.length === 5) {
                 trainBadge.style.display = 'inline-flex';
                 trainNameText.textContent = 'Fetching train route & classes...';
-                classSelect.innerHTML = '<option value="ALL">⏳ Loading train classes from IRCTC...</option>';
-                classSelect.disabled = true;
 
-                debounceTimer = setTimeout(() => fetchTrainInfo(val), 250);
+                debounceTimer = setTimeout(() => fetchTrainInfo(val), 200);
             }
         });
 
         async function fetchTrainInfo(trainNo) {
+            const journeyDate = journeyDateInput.value;
+            const cacheKey = `${trainNo}_${journeyDate}`;
+
+            if (trainInfoClientCache.has(cacheKey)) {
+                applyTrainData(trainInfoClientCache.get(cacheKey));
+                return;
+            }
+
             try {
                 trainBadge.style.display = 'inline-flex';
                 trainNameText.textContent = 'Fetching train route & classes...';
                 
-                const journeyDate = journeyDateInput.value;
                 const res = await apiFetch(`/api/train-info/${trainNo}?date=${journeyDate}`);
                 const data = await res.json().catch(() => ({}));
                 
                 if (res.ok && data.success && data.stations && data.stations.length > 0) {
-                    routeStations = data.stations;
-                    trainNameText.textContent = `${data.trainNo} - ${data.trainName}`;
-                    stationsList.innerHTML = '';
-                    
-                    data.stations.forEach(s => {
-                        const opt = document.createElement('option');
-                        opt.value = s.code;
-                        opt.label = `${s.name} (${s.code})`;
-                        stationsList.appendChild(opt);
-                    });
-
-                    const originInput = document.getElementById('origin');
-                    const destInput = document.getElementById('destination');
-                    if (originInput) originInput.value = data.stations[0].code;
-                    if (destInput) destInput.value = data.stations[data.stations.length - 1].code;
-
-                    // Update class preference dropdown with train's exact classes
-                    updateClassPreferences(data.classes);
+                    trainInfoClientCache.set(cacheKey, data);
+                    applyTrainData(data);
                 } else {
                     const msg = data.message || 'Train route not found';
                     trainNameText.textContent = msg;
@@ -1293,6 +1284,27 @@
                 trainNameText.textContent = err.message || 'Route details not found';
                 updateClassPreferences([]);
             }
+        }
+
+        function applyTrainData(data) {
+            routeStations = data.stations;
+            trainNameText.textContent = `${data.trainNo} - ${data.trainName}`;
+            stationsList.innerHTML = '';
+            
+            data.stations.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.code;
+                opt.label = `${s.name} (${s.code})`;
+                stationsList.appendChild(opt);
+            });
+
+            const originInput = document.getElementById('origin');
+            const destInput = document.getElementById('destination');
+            if (originInput) originInput.value = data.stations[0].code;
+            if (destInput) destInput.value = data.stations[data.stations.length - 1].code;
+
+            // Update class preference dropdown with train's exact classes
+            updateClassPreferences(data.classes);
         }
 
         // Search Form Submit

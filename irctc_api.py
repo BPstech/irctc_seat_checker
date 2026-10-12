@@ -74,6 +74,8 @@ class IRCTCService:
             return
         self.driver = None
         self.driver_lock = threading.Lock()
+        self.schedule_cache = {}
+        self.classes_cache = {}
         self._init_driver()
         self._initialized = True
 
@@ -135,8 +137,18 @@ class IRCTCService:
             self._init_driver()
 
     def get_train_schedule(self, train_no):
-        """Fetch train schedule containing list of stations"""
+        """Fetch train schedule containing list of stations with memory caching"""
+        t_key = str(train_no).strip()
+        now = time.time()
+        cached = self.schedule_cache.get(t_key)
+        if cached and (now - cached[0] < 43200):
+            return cached[1]
+
         with self.driver_lock:
+            cached = self.schedule_cache.get(t_key)
+            if cached and (now - cached[0] < 43200):
+                return cached[1]
+
             self.ensure_driver()
             js = """
             const callback = arguments[arguments.length - 1];
@@ -154,16 +166,19 @@ class IRCTCService:
             .catch(err => callback({success: false, error: err.toString()}));
             """
             try:
-                res = self.driver.execute_async_script(js, str(train_no).strip())
+                res = self.driver.execute_async_script(js, t_key)
                 if res.get('success'):
                     data = res.get('data', {})
                     if data.get('errorMessage'):
                         return {'success': False, 'message': data['errorMessage']}
-                    return {
+                    result = {
                         'success': True,
                         'trainName': data.get('trainName', ''),
                         'stationList': data.get('stationList', [])
                     }
+                    if result['stationList']:
+                        self.schedule_cache[t_key] = (now, result)
+                    return result
                 return {'success': False, 'message': res.get('error', 'Failed to fetch schedule')}
             except Exception as e:
                 logger.error(f"Error in get_train_schedule: {e}")
@@ -204,14 +219,20 @@ class IRCTCService:
 
     def get_train_classes(self, train_no, journey_date=None, boarding_stn=None, station_list=None):
         """
-        Dynamically determine available travel classes for a specific train.
-        Tries current journey date composition, then falls back to recent days (yesterday/prev days).
+        Dynamically determine available travel classes for a specific train with memory caching.
+        Tries current journey date composition, then falls back to recent days (yesterday).
         Returns a list of dicts: [{'code': '3A', 'name': 'AC 3 Tier (3A)'}, ...]
         """
+        t_key = str(train_no).strip()
+        now = time.time()
+        cached = self.classes_cache.get(t_key)
+        if cached and (now - cached[0] < 43200):
+            return cached[1]
+
         source_stn = boarding_stn
         if not source_stn:
             if not station_list:
-                sched = self.get_train_schedule(train_no)
+                sched = self.get_train_schedule(t_key)
                 station_list = sched.get('stationList', [])
             if station_list:
                 source_stn = station_list[0].get('stationCode')
@@ -225,22 +246,20 @@ class IRCTCService:
         classes_found = []
         
         # 1. Try specified journey date
-        comp = self.get_train_composition(train_no, journey_date, source_stn)
+        comp = self.get_train_composition(t_key, journey_date, source_stn)
         cdd = comp.get('data', {}).get('cdd') or []
         raw_classes = set(c['classCode'] for c in cdd if c.get('classCode'))
         if raw_classes:
             classes_found = sorted(list(raw_classes))
 
-        # 2. If chart not prepared or cdd empty, check previous days (up to 3 days back)
+        # 2. If chart not prepared or cdd empty, check yesterday (fast 1-day fallback)
         if not classes_found:
-            for day_offset in [1, 2, 3]:
-                prev_date = (datetime.now() - timedelta(days=day_offset)).strftime('%Y-%m-%d')
-                prev_comp = self.get_train_composition(train_no, prev_date, source_stn)
-                prev_cdd = prev_comp.get('data', {}).get('cdd') or []
-                prev_classes = set(c['classCode'] for c in prev_cdd if c.get('classCode'))
-                if prev_classes:
-                    classes_found = sorted(list(prev_classes))
-                    break
+            prev_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+            prev_comp = self.get_train_composition(t_key, prev_date, source_stn)
+            prev_cdd = prev_comp.get('data', {}).get('cdd') or []
+            prev_classes = set(c['classCode'] for c in prev_cdd if c.get('classCode'))
+            if prev_classes:
+                classes_found = sorted(list(prev_classes))
 
         # Standard class sorting order
         class_order = ['1A', '2A', '3A', '3E', 'EC', 'EA', 'CC', 'EV', 'SL', 'FC', '2S', 'VS', 'VC']
@@ -249,13 +268,69 @@ class IRCTCService:
 
         classes_found.sort(key=sort_key)
 
-        return [
+        result = [
             {
                 'code': cls_code,
                 'name': CLASS_NAME_MAP.get(cls_code, f"{cls_code} Class")
             }
             for cls_code in classes_found
         ]
+        if result:
+            self.classes_cache[t_key] = (now, result)
+        return result
+
+    def get_vacant_berths_batch(self, train_no, boarding_stn, remote_stn, source_stn, j_date, classes):
+        """Fetch all vacant berths for multiple classes concurrently in a single browser roundtrip."""
+        if not classes:
+            return {}
+        with self.driver_lock:
+            self.ensure_driver()
+            js = """
+            const callback = arguments[arguments.length - 1];
+            const p = arguments[0];
+            const promises = p.classes.map(cls =>
+                fetch('/online-charts/api/vacantBerth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        trainNo: p.trainNo,
+                        boardingStation: p.boardingStation,
+                        remoteStation: p.remoteStation,
+                        trainSourceStation: p.sourceStation,
+                        jDate: p.jDate,
+                        cls: cls,
+                        chartType: 1
+                    })
+                })
+                .then(r => r.json())
+                .then(data => ({ cls: cls, vbd: data.vbd || [] }))
+                .catch(() => ({ cls: cls, vbd: [] }))
+            );
+
+            Promise.all(promises)
+                .then(results => callback({ success: true, results: results }))
+                .catch(err => callback({ success: false, error: err.toString() }));
+            """
+            try:
+                res = self.driver.execute_async_script(js, {
+                    "trainNo": str(train_no).strip(),
+                    "boardingStation": str(boarding_stn).strip(),
+                    "remoteStation": remote_stn,
+                    "sourceStation": source_stn,
+                    "jDate": str(j_date).strip(),
+                    "classes": classes
+                })
+                out = {}
+                if res.get('success'):
+                    for item in res.get('results', []):
+                        out[item['cls']] = item.get('vbd', [])
+                return out
+            except Exception as e:
+                logger.error(f"Error in get_vacant_berths_batch: {e}")
+                return {}
 
     def get_vacant_berths_for_class(self, train_no, boarding_stn, remote_stn, source_stn, j_date, cls):
         """Fetch all vacant berths for a specific class"""
@@ -409,16 +484,17 @@ class IRCTCService:
         else:
             classes_to_check = available_classes
 
-        # 5. Fetch vacant berths across requested classes
+        # 5. Fetch vacant berths across requested classes in parallel
         all_vacant_berths = []
         remote = comp_data.get('remote') or origin_stn['stationCode']
         from_stn = comp_data.get('from') or source_station_code
         train_start_date = comp_data.get('trainStartDate') or journey_date
 
+        batch_results = self.get_vacant_berths_batch(
+            train_no, origin_stn['stationCode'], remote, from_stn, train_start_date, classes_to_check
+        )
         for cls in classes_to_check:
-            vb_list = self.get_vacant_berths_for_class(
-                train_no, origin_stn['stationCode'], remote, from_stn, train_start_date, cls
-            )
+            vb_list = batch_results.get(cls, [])
             for item in vb_list:
                 item['classCode'] = cls
                 item['className'] = CLASS_NAME_MAP.get(cls, cls)
@@ -518,6 +594,7 @@ class IRCTCService:
             'destPartialCount': dest_partial_count,
             'intermediateCount': intermediate_count,
             'greenSeats': categorized_seats,
+            'stationList': station_list,
             'message': f"Found {len(categorized_seats)} vacant green seats on Train {train_no} ({train_actual_name})! (Full Journey: {full_journey_count}, Segments: {len(categorized_seats) - full_journey_count})"
         }
 
@@ -548,8 +625,7 @@ class IRCTCService:
             }
 
         raw_seats = search_res.get('greenSeats', [])
-        sched_res = self.get_train_schedule(train_no)
-        stations = sched_res.get('stationList', [])
+        stations = search_res.get('stationList') or self.get_train_schedule(train_no).get('stationList', [])
         route_codes = [s['stationCode'] for s in stations]
         station_names = {s['stationCode']: s['stationName'] for s in stations}
 
