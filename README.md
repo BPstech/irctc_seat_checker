@@ -1,86 +1,104 @@
 # 🚂 IRCTC Green Seat Finder & Split Journey Planner
 
-Smart split-journey booking assistant and live seat vacancy tracker powered by direct CRIS/IRCTC online charts integration.
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0%2B-green.svg)](https://flask.palletsprojects.com/)
+[![Selenium](https://img.shields.io/badge/Selenium-Automated%20Headless-yellow.svg)](https://www.selenium.dev/)
+[![Vercel](https://img.shields.io/badge/Frontend-Vercel-black.svg)](https://vercel.com/)
+[![Cloudflare](https://img.shields.io/badge/Tunnel-Cloudflare-orange.svg)](https://www.cloudflare.com/)
+
+A smart, high-performance railway seat finder and split-journey itinerary planner for Indian Railways. It connects directly with IRCTC/CRIS live charts to identify vacant berths, hop seats across intermediate stations, and maximize your chances of getting confirmed tickets—even on fully booked trains.
 
 ---
 
-## 🚀 Architecture & Deployment
+## 🌟 Key Features
 
-This project uses a **hybrid architecture** designed for fast, seamless deployment on **Vercel** while keeping the backend completely hidden from users:
-
-1. **Frontend (Vercel)**:
-   - `index.html`: Responsive UI with multi-passenger options, same-coach preferences, dynamic train class detection, and real-time audio/visual alerts.
-   - `vercel.json`: Handles URL routing and rewrites `/api/*` to the serverless proxy.
-   - `api/proxy.js`: Vercel Serverless Function that forwards API calls to your Python backend using the private `BACKEND_URL` environment variable.
-
-2. **Backend (Python / Flask / Selenium)**:
-   - `app.py`: High-performance Flask REST API.
-   - `irctc_api.py`: Automation engine that interfaces directly with official CRIS internal endpoints with authenticated headless browser sessions.
-   - Runs locally or on a cloud host (Render, Railway, VPS).
+* **⚡ Ultra-Fast Search Engine (< 1s)**: Leverages browser-level parallel batching (`Promise.all`) inside headless Chromium to query all coach classes (`1A`, `2A`, `3A`, `3E`, `SL`, `2S`) concurrently.
+* **🧠 Smart Split-Journey Hopper**:
+  * **Direct Seats First**: Prioritizes 100% direct route seats.
+  * **Same-Coach Luggage Preference**: Finds split itineraries within the same coach so passengers don't have to carry luggage across coaches during the journey.
+  * **Multi-Passenger Clustering**: Keeps groups and families in adjacent or same-compartment berths whenever possible.
+* **📱 100% Mobile & Client-Ready**: Fully responsive design tailored for smartphones (touch-friendly targets, horizontal berth matrix scrolling, and iOS Safari viewport auto-zoom prevention). Zero developer debug badges or connection modals.
+* **🔄 Zero-Configuration Cloud Coordinator**: When deployed on Vercel, the site automatically detects your PC backend using a cloud coordinator. No manual copying or pasting of Cloudflare tunnel URLs is required.
+* **🔔 Live Real-Time TTE Vacancy Monitoring**: Audio/visual alerts and background polling to notify you the instant newly allotted or vacated seats appear on the chart.
+* **💾 Multi-Tier In-Memory Caching**: Station schedules and train coach compositions are cached in memory for instantaneous repeat lookups.
 
 ---
 
-## 🔒 How the Backend Stays Hidden From Users
+## 🏗️ Architecture
 
-- **Zero Exposure in DevTools**: Visitors visiting `https://your-app.vercel.app` only see network requests to `/api/train-info`, `/api/find-seats`, `/api/live-poll` on the **same Vercel domain**. They never see your backend's IP, port, server host, or internal CRIS endpoints.
-- **Hidden Secret in Vercel**: Your real backend URL is stored securely in Vercel's **Environment Variables** (`BACKEND_URL`). It is never committed to GitHub or exposed in frontend JavaScript.
-- **No CORS Issues**: Since all requests go to your own Vercel domain, there are zero cross-origin (CORS) errors.
-- **Private GitHub Option**: In `GitHub_Quick_Push.bat`, choosing **Private** ensures your GitHub repository is visible only to you, while Vercel can still deploy it automatically.
-
----
-
-## 🛠️ Step-by-Step Deployment Instructions
-
-### Step 1: Upload to GitHub via BAT File
-1. Double-click `GitHub_Quick_Push.bat` in this folder.
-2. Select **[2] Create a NEW GitHub repository and push this directory**.
-3. Enter your repository name (e.g. `irctc-seat-finder`).
-4. Choose visibility:
-   - Select **[2] Private** if you want your repository completely hidden from public GitHub viewers.
-   - Or select **[1] Public** if you want a public repository (your backend URL remains protected via Vercel environment variables regardless).
-5. The batch file will automatically initialize Git, commit all files, and push to GitHub.
+```mermaid
+flowchart LR
+    A["📱 User (Phone / PC Browser)"] -->|"Visits Vercel Site"| B["⚡ Vercel Frontend & Serverless Proxy\n(/api/proxy.js)"]
+    B -->|"Resolves Active Tunnel"| C["☁️ Cloud Coordinator (GitHub Gist)"]
+    B -->|"Secure Tunnel Request"| D["🛡️ Cloudflare HTTPS Tunnel\n(cloudflared)"]
+    D -->|"Port 5000"| E["💻 User PC (Local Flask Server)\n(app.py)"]
+    E -->|"Parallel API Requests"| F["🤖 Headless Chrome Driver\n(irctc_api.py)"]
+    F -->|"Official Live Charts"| G["🚆 IRCTC / CRIS Servers"]
+```
 
 ---
 
-### Step 2: Deploy Frontend on Vercel
-1. Log in to [Vercel](https://vercel.com) and click **"Add New..."** > **"Project"**.
-2. Select your newly created GitHub repository.
-3. In **Project Settings**:
-   - Framework Preset: **Other**
-   - Root Directory: `./` (default)
-4. Click **Deploy**. Vercel will deploy your site in seconds!
+## 🚀 Quick Start Guide
+
+The repository includes dedicated 1-click batch scripts for Windows:
+
+### 1. Run 100% Locally on Your PC
+To use the tool entirely offline on your computer:
+1. Double-click **`Run_Local_Website.bat`**.
+2. Dependencies are automatically verified and installed.
+3. The server starts on port `5000` and automatically launches `http://localhost:5000` in your default browser.
 
 ---
 
-### Step 3: Connect Your Backend
-Since the backend uses headless Chrome to bypass IRCTC's bot detection, run your backend using either of these two methods:
-
-#### Option A: Run Backend on Your PC (Free Cloudflare Tunnel)
-1. Start your backend locally with `run_irctc_finder.bat`.
-2. Expose it via a free tunnel:
-   - Using Cloudflare Tunnel:
-     ```bash
-     cloudflared tunnel --url http://localhost:5000
-     ```
-   - Or using ngrok:
-     ```bash
-     ngrok http 5000
-     ```
-3. Copy the generated HTTPS URL (e.g. `https://xyz-abc.trycloudflare.com`).
-4. In Vercel:
-   - Go to your project > **Settings** > **Environment Variables**.
-   - Add variable name: `BACKEND_URL`
-   - Value: `https://xyz-abc.trycloudflare.com` (your tunnel URL without trailing slash).
-   - Save and redeploy.
-
-#### Option B: Deploy Backend to Cloud (Render / Railway / VPS)
-1. Deploy `app.py` to Render, Railway, or any Linux VPS with Google Chrome installed.
-2. Copy your backend service URL (e.g. `https://my-irctc-backend.onrender.com`).
-3. Set `BACKEND_URL` in your Vercel project environment variables.
+### 2. Host as the Live Backend for Vercel
+To let friends, clients, or mobile devices access your Vercel-hosted website using your PC as the live scraper:
+1. Double-click **`Host_Backend_For_Vercel.bat`**.
+2. The launcher will:
+   * Launch a secure Cloudflare Tunnel to your local port 5000.
+   * Automatically update the cloud coordinator with your live tunnel URL.
+   * Start the Flask backend.
+3. Your Vercel website (e.g. `https://irctc-seat-checker.vercel.app`) is **instantly connected** to your PC with zero manual steps!
 
 ---
 
-## 💻 Running 100% Locally
-To run everything offline or on your local machine:
-1. Double-click `run_irctc_finder.bat`.
-2. Open your browser and navigate to: `http://localhost:5000`.
+### 3. Deploy Updates to GitHub & Vercel
+To commit and deploy local modifications to GitHub and trigger automatic Vercel deployment:
+1. Double-click **`GitHub_Quick_Push.bat`**.
+2. The utility automatically detects your existing repository.
+3. Press **`ENTER`** (Choice `[1]`). All changes will be staged, committed, and pushed to `origin main` automatically.
+
+---
+
+## 📡 REST API Reference
+
+All API calls are exposed under `/api/*`:
+
+| Endpoint | Method | Description |
+| :--- | :---: | :--- |
+| `/api/train-info/<train_no>?date=<YYYY-MM-DD>` | `GET` | Fetches train route stations, arrival/departure schedule, and available classes. |
+| `/api/find-seats` | `POST` | Initiates an asynchronous background seat search. Returns a unique `searchId`. |
+| `/api/search-status/<search_id>` | `GET` | Polls the progress and returns computed split-journey options and vacant seats. |
+| `/api/live-poll` | `POST` | Real-time monitoring endpoint to detect newly allotted seats or fresh vacancies. |
+| `/health` | `GET` | Health check endpoint returning backend status and timestamp. |
+
+---
+
+## ⚠️ Important Operating Notes
+
+> [!NOTE]
+> **IRCTC Daily Maintenance Downtime (23:45 to 00:20 hrs IST)**:
+> Indian Railways (CRIS/IRCTC) shuts down all national charts, booking, and enquiry APIs daily between **23:45 and 00:20 hrs IST** for system maintenance. During this window, IRCTC queries return a maintenance downtime status. Normal operations resume automatically at 00:20 hrs.
+
+> [!TIP]
+> **Chart Preparation Timing**:
+> First charts are typically prepared by Indian Railways **4 hours before departure** of the train from the originating station. Second/final charts are prepared 30 minutes before departure.
+
+---
+
+## 💻 Tech Stack & Requirements
+
+* **Operating System**: Windows 10/11, macOS, or Linux
+* **Python**: 3.10 or higher
+* **Browser**: Google Chrome installed (managed headlessly by Selenium)
+* **Frontend**: HTML5, Vanilla JavaScript (ES6+), CSS3 Flexbox/Grid
+* **Hosting**: Vercel (Frontend & Serverless Proxy), Cloudflare Tunnel (Secure ingress)
