@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "/api/proxy"
+      "destination": "/api/proxy?match=:match*"
     }
   ],
   "functions": {

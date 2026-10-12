@@ -687,167 +687,6 @@
             border-radius: 12px;
         }
 
-        /* Backend Connection Status Pill */
-        .backend-status-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-        }
-
-        .backend-status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            background: #f1f5f9;
-            border: 1px solid var(--gray-300);
-            padding: 5px 13px;
-            border-radius: 9999px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: #334155;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-
-        .backend-status-pill:hover {
-            background: #e2e8f0;
-            border-color: #94a3b8;
-            transform: translateY(-1px);
-        }
-
-        .backend-status-pill.online {
-            background: #ecfdf5;
-            border-color: #a7f3d0;
-            color: #065f46;
-        }
-
-        .backend-status-pill.local {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-            color: #1e40af;
-            cursor: default;
-        }
-
-        .backend-status-pill.local:hover {
-            transform: none;
-        }
-
-        .backend-status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #94a3b8;
-        }
-
-        .backend-status-pill.online .backend-status-dot {
-            background: #10b981;
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
-        }
-
-        .backend-status-pill.local .backend-status-dot {
-            background: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-        }
-
-        /* Backend Connection Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-            animation: fadeIn 0.2s ease;
-        }
-
-        .modal-card {
-            background: white;
-            border-radius: 20px;
-            max-width: 480px;
-            width: 100%;
-            padding: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-            animation: scaleUp 0.25s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes scaleUp {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--gray-200);
-        }
-
-        .modal-header h3 {
-            font-size: 1.15rem;
-            color: #1e1b4b;
-            font-weight: 700;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: #64748b;
-            cursor: pointer;
-            padding: 0 4px;
-            line-height: 1;
-        }
-
-        .modal-body {
-            margin-bottom: 18px;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .modal-btn-sec {
-            background: var(--gray-100);
-            border: 1px solid var(--gray-300);
-            color: #334155;
-            padding: 9px 14px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-
-        .modal-btn-pri {
-            background: var(--primary);
-            border: none;
-            color: white;
-            padding: 9px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-
         /* Mobile Browser Responsiveness */
         @media (max-width: 768px) {
             body {
@@ -1028,11 +867,6 @@
                 padding: 12px;
                 font-size: 0.98rem;
             }
-
-            .modal-card {
-                padding: 18px 14px;
-                border-radius: 16px;
-            }
         }
     </style>
 </head>
@@ -1043,13 +877,6 @@
             <p>Smart Split-Journey Planner & Real-Time Vacancy Monitor</p>
             <div class="pill-badge">
                 ⚡ Direct CRIS Live Seat Charts Integration
-            </div>
-            <div class="backend-status-container">
-                <div class="backend-status-pill" id="backendPill" onclick="openBackendModal()">
-                    <span class="backend-status-dot" id="backendDot"></span>
-                    <span id="backendStatusLabel">Checking backend...</span>
-                    <span id="backendEditIcon" style="opacity: 0.6; font-size: 0.8rem;">⚙️</span>
-                </div>
             </div>
         </div>
 
@@ -1188,32 +1015,6 @@
         </div>
     </div>
 
-    <!-- Backend Connection Modal -->
-    <div class="modal-overlay" id="backendModal">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3>🔗 Connect to your PC Backend</h3>
-                <button type="button" class="modal-close" onclick="closeBackendModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p style="font-size: 0.88rem; color: #475569; margin-bottom: 12px; line-height: 1.45;">
-                    Hosting the backend on your PC? Run <strong>Host_Backend_For_Vercel.bat</strong> on your computer, then enter your public Tunnel URL below:
-                </p>
-                <div class="form-group">
-                    <label for="customBackendInput" style="font-size: 0.82rem; font-weight: 600; color: #334155;">Cloudflare Tunnel URL</label>
-                    <input type="url" id="customBackendInput" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" autocorrect="off">
-                </div>
-                <div style="font-size: 0.78rem; color: #64748b; margin-top: 6px;">
-                    💡 <em>Tip: You can also open the website using the 1-click link generated by the batch file.</em>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="modal-btn-sec" onclick="disconnectCustomBackend()">Reset to Default</button>
-                <button type="button" class="modal-btn-pri" onclick="saveCustomBackend()">Save & Connect</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         let currentResults = null;
         let routeStations = [];
@@ -1224,118 +1025,8 @@
         let countdownTimer = null;
         let remainingSeconds = 30;
 
-        // Backend API Connection Helper
-        function getCustomBackend() {
-            return localStorage.getItem('irctc_custom_backend') || '';
-        }
-
         async function apiFetch(endpoint, options = {}) {
-            const customBackend = getCustomBackend();
-            const headers = options.headers ? { ...options.headers } : {};
-
-            // If a custom backend is set and we're on remote (Vercel):
-            if (customBackend && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-                headers['x-backend-url'] = customBackend;
-            }
-
-            return fetch(endpoint, {
-                ...options,
-                headers
-            });
-        }
-
-        function updateBackendStatusUI() {
-            const pill = document.getElementById('backendPill');
-            const label = document.getElementById('backendStatusLabel');
-            const editIcon = document.getElementById('backendEditIcon');
-            if (!pill || !label) return;
-
-            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            const customBackend = getCustomBackend();
-
-            if (isLocal) {
-                pill.className = 'backend-status-pill local';
-                label.textContent = 'PC Local Mode';
-                pill.title = 'Running directly on your local computer';
-                if (editIcon) editIcon.style.display = 'none';
-            } else if (customBackend) {
-                pill.className = 'backend-status-pill online';
-                try {
-                    const parsed = new URL(customBackend);
-                    label.textContent = `PC Online: ${parsed.hostname}`;
-                } catch(e) {
-                    label.textContent = 'PC Backend Connected';
-                }
-                pill.title = `Connected to ${customBackend}. Click to change.`;
-                if (editIcon) editIcon.style.display = 'inline';
-            } else {
-                pill.className = 'backend-status-pill';
-                label.textContent = 'Backend: Cloud / Vercel';
-                pill.title = 'Click to connect to your PC backend';
-                if (editIcon) editIcon.style.display = 'inline';
-            }
-        }
-
-        function initBackendConnection() {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const backendParam = urlParams.get('backend');
-                if (backendParam) {
-                    let cleaned = backendParam.trim().replace(/\/+$/, '');
-                    if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
-                        cleaned = 'https://' + cleaned;
-                    }
-                    localStorage.setItem('irctc_custom_backend', cleaned);
-                    const url = new URL(window.location);
-                    url.searchParams.delete('backend');
-                    window.history.replaceState({}, '', url.pathname + (url.search || ''));
-                    setTimeout(() => {
-                        showStatus(`Connected to PC Backend: ${cleaned}`, 'success');
-                    }, 300);
-                }
-            } catch(e) {}
-            updateBackendStatusUI();
-        }
-
-        function openBackendModal() {
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                return;
-            }
-            const modal = document.getElementById('backendModal');
-            const input = document.getElementById('customBackendInput');
-            if (input) input.value = getCustomBackend();
-            if (modal) modal.classList.add('active');
-        }
-
-        function closeBackendModal() {
-            const modal = document.getElementById('backendModal');
-            if (modal) modal.classList.remove('active');
-        }
-
-        function saveCustomBackend() {
-            const input = document.getElementById('customBackendInput');
-            let val = (input ? input.value : '').trim().replace(/\/+$/, '');
-            if (val && !val.startsWith('http://') && !val.startsWith('https://')) {
-                val = 'https://' + val;
-            }
-            if (val) {
-                localStorage.setItem('irctc_custom_backend', val);
-                showStatus(`Connected to PC Backend: ${val}`, 'success');
-            } else {
-                localStorage.removeItem('irctc_custom_backend');
-                showStatus('Reset to default backend', 'success');
-            }
-            closeBackendModal();
-            updateBackendStatusUI();
-        }
-
-        function disconnectCustomBackend() {
-            localStorage.removeItem('irctc_custom_backend');
-            const input = document.getElementById('customBackendInput');
-            if (input) input.value = '';
-            closeBackendModal();
-            updateBackendStatusUI();
-            showStatus('Reset to default backend', 'warning');
+            return fetch(endpoint, options);
         }
 
         // DOM elements
@@ -1518,7 +1209,6 @@
         const todayStr = formatDate(today);
         const tomorrowStr = formatDate(tomorrow);
         journeyDateInput.value = todayStr;
-        initBackendConnection();
 
         function handleDateChange() {
             const val = trainNoInput.value.trim();
