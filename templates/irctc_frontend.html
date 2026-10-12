@@ -1263,10 +1263,9 @@
                 
                 const journeyDate = journeyDateInput.value;
                 const res = await apiFetch(`/api/train-info/${trainNo}?date=${journeyDate}`);
-                if (!res.ok) throw new Error('Train not found');
-                const data = await res.json();
+                const data = await res.json().catch(() => ({}));
                 
-                if (data.success && data.stations && data.stations.length > 0) {
+                if (res.ok && data.success && data.stations && data.stations.length > 0) {
                     routeStations = data.stations;
                     trainNameText.textContent = `${data.trainNo} - ${data.trainName}`;
                     stationsList.innerHTML = '';
@@ -1286,10 +1285,12 @@
                     // Update class preference dropdown with train's exact classes
                     updateClassPreferences(data.classes);
                 } else {
-                    throw new Error(data.message || 'Train not found');
+                    const msg = data.message || 'Train route not found';
+                    trainNameText.textContent = msg;
+                    updateClassPreferences([]);
                 }
             } catch (err) {
-                trainNameText.textContent = 'Route details not found';
+                trainNameText.textContent = err.message || 'Route details not found';
                 updateClassPreferences([]);
             }
         }
