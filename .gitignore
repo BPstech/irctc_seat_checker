@@ -14,6 +14,7 @@ ENV/
 # Chrome / Selenium logs & drivers
 chromedriver.exe
 chromedriver
+cloudflared.exe
 *.log
 
 # Sensitive environment variables

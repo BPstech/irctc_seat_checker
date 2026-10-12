@@ -3,6 +3,7 @@ irctc_api.py - Direct IRCTC Online Charts automation engine.
 Uses a headless browser session to securely communicate with IRCTC/CRIS internal APIs.
 """
 
+import re
 import time
 import threading
 import logging
@@ -43,6 +44,19 @@ CLASS_NAME_MAP = {
     'VS': 'Vistadome Non-AC (VS)',
     'VC': 'Vistadome Chair Car (VC)'
 }
+
+def coach_sort_key(coach_str):
+    """
+    Naturally sorts coach codes (e.g. 'B2' before 'B10'):
+    1. By class prefix priority: H (1A), A (2A), B (3A), M (3E), C (CC), E (EC), S (SL), D (2S)
+    2. By integer coach number: 1, 2, 3 ... 9, 10, 11, 12 ...
+    """
+    m = re.match(r'([A-Za-z]+)(\d+)', str(coach_str).strip())
+    if m:
+        pfx, num = m.groups()
+        prefix_order = {'H': 0, 'HA': 1, 'A': 2, 'B': 3, 'M': 4, 'C': 5, 'E': 6, 'EA': 7, 'EV': 8, 'S': 9, 'D': 10}
+        return (prefix_order.get(pfx.upper(), 50), pfx.upper(), int(num))
+    return (99, str(coach_str), 0)
 
 class IRCTCService:
     _instance = None
@@ -479,7 +493,12 @@ class IRCTCService:
 
         # Sort so full journey seats appear first, then origin partial, dest partial, intermediate
         order_priority = {'full': 0, 'origin_partial': 1, 'dest_partial': 2, 'intermediate': 3}
-        categorized_seats.sort(key=lambda x: (order_priority.get(x['coverage'], 4), x['class_type'], x['coach'], int(x['berth']) if x['berth'].isdigit() else 999))
+        categorized_seats.sort(key=lambda x: (
+            order_priority.get(x['coverage'], 4),
+            x['class_type'],
+            coach_sort_key(x['coach']),
+            int(x['berth']) if str(x['berth']).isdigit() else 999
+        ))
 
         return {
             'success': True,
@@ -590,7 +609,8 @@ class IRCTCService:
                 for b in direct_pool:
                     direct_by_coach.setdefault(b['coach'], []).append(b)
 
-                for coach, b_list in direct_by_coach.items():
+                for coach in sorted(direct_by_coach.keys(), key=coach_sort_key):
+                    b_list = direct_by_coach[coach]
                     if len(b_list) >= passengers:
                         chosen = b_list[:passengers]
                         candidate_options.append({
@@ -640,7 +660,7 @@ class IRCTCService:
                     common_coaches = coaches1.intersection(coaches2)
 
                     # A. Same Coach across both legs (HIGHEST PRIORITY FOR SPLIT!)
-                    for coach in common_coaches:
+                    for coach in sorted(common_coaches, key=coach_sort_key):
                         c1 = [b for b in leg1_pool if b['coach'] == coach][:passengers]
                         c2 = [b for b in leg2_pool if b['coach'] == coach][:passengers]
                         if len(c1) == passengers and len(c2) == passengers:
@@ -693,8 +713,8 @@ class IRCTCService:
                             })
 
                     # B. Coach Transfer across legs
-                    for c1_code in coaches1:
-                        for c2_code in coaches2:
+                    for c1_code in sorted(coaches1, key=coach_sort_key):
+                        for c2_code in sorted(coaches2, key=coach_sort_key):
                             if c1_code == c2_code:
                                 continue
                             c1 = [b for b in leg1_pool if b['coach'] == c1_code][:passengers]
@@ -747,8 +767,13 @@ class IRCTCService:
                                     ]
                                 })
 
-        # Sort all candidate options by score descending, then coverage % descending
-        candidate_options.sort(key=lambda x: (x['score'], x['coverage_pct']), reverse=True)
+        # Sort all candidate options by score descending, then coverage % descending, then natural coach order
+        def option_sort_key(opt):
+            first_coach = opt['legs'][0]['coach'] if opt.get('legs') else ''
+            c_key = coach_sort_key(first_coach)
+            return (opt['score'], opt['coverage_pct'], -c_key[0], -c_key[2])
+
+        candidate_options.sort(key=option_sort_key, reverse=True)
 
         # Deduplicate candidate options so user gets genuinely distinct itineraries
         unique_options = []

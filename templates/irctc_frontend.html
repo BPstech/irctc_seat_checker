@@ -604,12 +604,435 @@
             text-align: center;
         }
 
-        @media (max-width: 700px) {
-            .container { padding: 22px; }
-            .form-grid { grid-template-columns: 1fr; }
-            .form-group.full-width { grid-column: span 1; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .live-bar { flex-direction: column; align-items: flex-start; }
+        /* Coach Filter Chips Bar */
+        .coach-filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 12px;
+            align-items: center;
+        }
+
+        .coach-filter-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #475569;
+            margin-right: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .coach-chip {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1px solid var(--gray-300);
+            background: white;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .coach-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #eff6ff;
+            transform: translateY(-1px);
+        }
+
+        .coach-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Coach Section Header */
+        .coach-section {
+            margin-bottom: 18px;
+        }
+
+        .coach-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+            background: #f1f5f9;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+        }
+
+        .coach-section-title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 0.96rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .coach-section-count {
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #334155;
+            padding: 3px 10px;
+            border-radius: 12px;
+        }
+
+        /* Backend Connection Status Pill */
+        .backend-status-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .backend-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: #f1f5f9;
+            border: 1px solid var(--gray-300);
+            padding: 5px 13px;
+            border-radius: 9999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .backend-status-pill:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+            transform: translateY(-1px);
+        }
+
+        .backend-status-pill.online {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+            color: #065f46;
+        }
+
+        .backend-status-pill.local {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e40af;
+            cursor: default;
+        }
+
+        .backend-status-pill.local:hover {
+            transform: none;
+        }
+
+        .backend-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+
+        .backend-status-pill.online .backend-status-dot {
+            background: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+        }
+
+        .backend-status-pill.local .backend-status-dot {
+            background: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        }
+
+        /* Backend Connection Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 20px;
+            max-width: 480px;
+            width: 100%;
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+            animation: scaleUp 0.25s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleUp {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .modal-header h3 {
+            font-size: 1.15rem;
+            color: #1e1b4b;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .modal-body {
+            margin-bottom: 18px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn-sec {
+            background: var(--gray-100);
+            border: 1px solid var(--gray-300);
+            color: #334155;
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .modal-btn-pri {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        /* Mobile Browser Responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 14px 10px;
+                align-items: flex-start;
+            }
+
+            .container {
+                padding: 22px 16px;
+                border-radius: 20px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+            }
+
+            .header h1 {
+                font-size: 1.65rem;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .header p {
+                font-size: 0.88rem;
+            }
+
+            .live-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+                padding: 12px 14px;
+            }
+
+            .live-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+
+            /* Prevent auto-zoom on iOS mobile browsers */
+            input, select {
+                font-size: 16px !important;
+                padding: 11px 12px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 10px 6px;
+            }
+
+            .stat-value {
+                font-size: 1.25rem;
+            }
+
+            .stat-label {
+                font-size: 0.7rem;
+            }
+
+            .tabs {
+                gap: 6px;
+                padding-bottom: 8px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            .tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .tab-btn {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+                flex-shrink: 0;
+            }
+
+            .coach-filter-bar {
+                padding: 10px;
+                gap: 6px;
+            }
+
+            .coach-chip {
+                padding: 5px 10px;
+                font-size: 0.78rem;
+            }
+
+            .coach-section-header {
+                padding: 8px 12px;
+            }
+
+            .coach-section-title {
+                font-size: 0.9rem;
+            }
+
+            .split-card {
+                padding: 14px 12px;
+                border-radius: 14px;
+            }
+
+            .split-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            .timeline {
+                padding-left: 20px;
+                gap: 12px;
+            }
+
+            .timeline-node {
+                left: -20px;
+                width: 14px;
+                height: 14px;
+                top: 3px;
+            }
+
+            .step-header {
+                font-size: 0.88rem;
+            }
+
+            .pax-seat-chip {
+                font-size: 0.76rem;
+                padding: 3px 8px;
+            }
+
+            .seat-card {
+                padding: 12px 14px;
+                border-radius: 10px;
+            }
+
+            .coach-badge {
+                font-size: 0.95rem;
+                padding: 6px 10px;
+                min-width: 48px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px 6px;
+            }
+
+            .container {
+                padding: 16px 12px;
+                border-radius: 16px;
+            }
+
+            .header h1 {
+                font-size: 1.4rem;
+            }
+
+            .pill-badge {
+                font-size: 0.74rem;
+                padding: 4px 10px;
+            }
+
+            .date-chips {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .chip {
+                font-size: 0.75rem;
+                padding: 4px 8px;
+            }
+
+            .btn {
+                padding: 12px;
+                font-size: 0.98rem;
+            }
+
+            .modal-card {
+                padding: 18px 14px;
+                border-radius: 16px;
+            }
         }
     </style>
 </head>
@@ -620,6 +1043,13 @@
             <p>Smart Split-Journey Planner & Real-Time Vacancy Monitor</p>
             <div class="pill-badge">
                 ⚡ Direct CRIS Live Seat Charts Integration
+            </div>
+            <div class="backend-status-container">
+                <div class="backend-status-pill" id="backendPill" onclick="openBackendModal()">
+                    <span class="backend-status-dot" id="backendDot"></span>
+                    <span id="backendStatusLabel">Checking backend...</span>
+                    <span id="backendEditIcon" style="opacity: 0.6; font-size: 0.8rem;">⚙️</span>
+                </div>
             </div>
         </div>
 
@@ -758,6 +1188,32 @@
         </div>
     </div>
 
+    <!-- Backend Connection Modal -->
+    <div class="modal-overlay" id="backendModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>🔗 Connect to your PC Backend</h3>
+                <button type="button" class="modal-close" onclick="closeBackendModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.88rem; color: #475569; margin-bottom: 12px; line-height: 1.45;">
+                    Hosting the backend on your PC? Run <strong>Host_Backend_For_Vercel.bat</strong> on your computer, then enter your public Tunnel URL below:
+                </p>
+                <div class="form-group">
+                    <label for="customBackendInput" style="font-size: 0.82rem; font-weight: 600; color: #334155;">Cloudflare Tunnel URL</label>
+                    <input type="url" id="customBackendInput" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" autocorrect="off">
+                </div>
+                <div style="font-size: 0.78rem; color: #64748b; margin-top: 6px;">
+                    💡 <em>Tip: You can also open the website using the 1-click link generated by the batch file.</em>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn-sec" onclick="disconnectCustomBackend()">Reset to Default</button>
+                <button type="button" class="modal-btn-pri" onclick="saveCustomBackend()">Save & Connect</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentResults = null;
         let routeStations = [];
@@ -767,6 +1223,120 @@
         let liveTimer = null;
         let countdownTimer = null;
         let remainingSeconds = 30;
+
+        // Backend API Connection Helper
+        function getCustomBackend() {
+            return localStorage.getItem('irctc_custom_backend') || '';
+        }
+
+        async function apiFetch(endpoint, options = {}) {
+            const customBackend = getCustomBackend();
+            const headers = options.headers ? { ...options.headers } : {};
+
+            // If a custom backend is set and we're on remote (Vercel):
+            if (customBackend && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                headers['x-backend-url'] = customBackend;
+            }
+
+            return fetch(endpoint, {
+                ...options,
+                headers
+            });
+        }
+
+        function updateBackendStatusUI() {
+            const pill = document.getElementById('backendPill');
+            const label = document.getElementById('backendStatusLabel');
+            const editIcon = document.getElementById('backendEditIcon');
+            if (!pill || !label) return;
+
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const customBackend = getCustomBackend();
+
+            if (isLocal) {
+                pill.className = 'backend-status-pill local';
+                label.textContent = 'PC Local Mode';
+                pill.title = 'Running directly on your local computer';
+                if (editIcon) editIcon.style.display = 'none';
+            } else if (customBackend) {
+                pill.className = 'backend-status-pill online';
+                try {
+                    const parsed = new URL(customBackend);
+                    label.textContent = `PC Online: ${parsed.hostname}`;
+                } catch(e) {
+                    label.textContent = 'PC Backend Connected';
+                }
+                pill.title = `Connected to ${customBackend}. Click to change.`;
+                if (editIcon) editIcon.style.display = 'inline';
+            } else {
+                pill.className = 'backend-status-pill';
+                label.textContent = 'Backend: Cloud / Vercel';
+                pill.title = 'Click to connect to your PC backend';
+                if (editIcon) editIcon.style.display = 'inline';
+            }
+        }
+
+        function initBackendConnection() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const backendParam = urlParams.get('backend');
+                if (backendParam) {
+                    let cleaned = backendParam.trim().replace(/\/+$/, '');
+                    if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+                        cleaned = 'https://' + cleaned;
+                    }
+                    localStorage.setItem('irctc_custom_backend', cleaned);
+                    const url = new URL(window.location);
+                    url.searchParams.delete('backend');
+                    window.history.replaceState({}, '', url.pathname + (url.search || ''));
+                    setTimeout(() => {
+                        showStatus(`Connected to PC Backend: ${cleaned}`, 'success');
+                    }, 300);
+                }
+            } catch(e) {}
+            updateBackendStatusUI();
+        }
+
+        function openBackendModal() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return;
+            }
+            const modal = document.getElementById('backendModal');
+            const input = document.getElementById('customBackendInput');
+            if (input) input.value = getCustomBackend();
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeBackendModal() {
+            const modal = document.getElementById('backendModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function saveCustomBackend() {
+            const input = document.getElementById('customBackendInput');
+            let val = (input ? input.value : '').trim().replace(/\/+$/, '');
+            if (val && !val.startsWith('http://') && !val.startsWith('https://')) {
+                val = 'https://' + val;
+            }
+            if (val) {
+                localStorage.setItem('irctc_custom_backend', val);
+                showStatus(`Connected to PC Backend: ${val}`, 'success');
+            } else {
+                localStorage.removeItem('irctc_custom_backend');
+                showStatus('Reset to default backend', 'success');
+            }
+            closeBackendModal();
+            updateBackendStatusUI();
+        }
+
+        function disconnectCustomBackend() {
+            localStorage.removeItem('irctc_custom_backend');
+            const input = document.getElementById('customBackendInput');
+            if (input) input.value = '';
+            closeBackendModal();
+            updateBackendStatusUI();
+            showStatus('Reset to default backend', 'warning');
+        }
 
         // DOM elements
         const trainNoInput = document.getElementById('trainNo');
@@ -867,6 +1437,7 @@
             if (loading) loading.style.display = 'none';
 
             resetLiveMonitoring();
+            activeCoachFilter = 'ALL';
             currentResults = null;
         }
 
@@ -947,6 +1518,7 @@
         const todayStr = formatDate(today);
         const tomorrowStr = formatDate(tomorrow);
         journeyDateInput.value = todayStr;
+        initBackendConnection();
 
         function handleDateChange() {
             const val = trainNoInput.value.trim();
@@ -1000,7 +1572,7 @@
                 trainNameText.textContent = 'Fetching train route & classes...';
                 
                 const journeyDate = journeyDateInput.value;
-                const res = await fetch(`/api/train-info/${trainNo}?date=${journeyDate}`);
+                const res = await apiFetch(`/api/train-info/${trainNo}?date=${journeyDate}`);
                 if (!res.ok) throw new Error('Train not found');
                 const data = await res.json();
                 
@@ -1058,7 +1630,7 @@
             resultsContainer.style.display = 'none';
 
             try {
-                const response = await fetch('/api/find-seats', {
+                const response = await apiFetch('/api/find-seats', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ trainNo, origin, destination, journeyDate, classType, passengers, maxOptions })
@@ -1079,7 +1651,7 @@
 
         async function pollStatus(searchId) {
             try {
-                const res = await fetch(`/api/search-status/${searchId}`);
+                const res = await apiFetch(`/api/search-status/${searchId}`);
                 const data = await res.json();
 
                 if (!data.success) {
@@ -1145,7 +1717,13 @@
             document.getElementById('countDirectTab').textContent = directSeats.length;
 
             renderSplitItineraries(splitOpts);
-            renderAllSeats(seats);
+            const activeTabBtn = document.querySelector('.tab-btn.active');
+            const activeTab = activeTabBtn ? activeTabBtn.getAttribute('data-tab') : 'split';
+            if (activeTab === 'directSeats') {
+                renderAllSeats(seats, true, activeCoachFilter);
+            } else {
+                renderAllSeats(seats, false, activeCoachFilter);
+            }
 
             resultsContainer.style.display = 'block';
 
@@ -1256,11 +1834,33 @@
             });
         }
 
-        function renderAllSeats(seats, filterDirect = false) {
+        let activeCoachFilter = 'ALL';
+
+        function coachNaturalSort(a, b) {
+            const parse = (c) => {
+                const m = String(c || '').trim().match(/^([A-Za-z]+)(\d+)?/);
+                if (!m) return { pfx: String(c || '').toUpperCase(), num: 0 };
+                return { pfx: m[1].toUpperCase(), num: parseInt(m[2] || '0', 10) };
+            };
+            const classOrder = { 'H': 1, 'HA': 2, 'A': 3, 'B': 4, 'M': 5, 'C': 6, 'E': 7, 'EA': 8, 'EV': 9, 'S': 10, 'D': 11 };
+            const pA = parse(a);
+            const pB = parse(b);
+            const ordA = classOrder[pA.pfx] || 50;
+            const ordB = classOrder[pB.pfx] || 50;
+            if (ordA !== ordB) return ordA - ordB;
+            if (pA.pfx !== pB.pfx) return pA.pfx.localeCompare(pB.pfx);
+            return pA.num - pB.num;
+        }
+
+        function renderAllSeats(seats, filterDirect = false, targetCoach = null) {
             const container = document.getElementById('tabContentAllSeats');
             container.innerHTML = '';
 
-            const list = filterDirect ? seats.filter(s => s.is_direct) : seats;
+            if (targetCoach !== null) {
+                activeCoachFilter = targetCoach;
+            }
+
+            const list = filterDirect ? seats.filter(s => s.is_direct) : [...seats];
 
             if (list.length === 0) {
                 container.innerHTML = `
@@ -1271,28 +1871,104 @@
                 return;
             }
 
+            // Build Coach Map
+            const coachMap = {};
             list.forEach(seat => {
-                const card = document.createElement('div');
-                card.className = `seat-card ${seat.is_direct ? 'direct' : ''}`;
+                const c = seat.coach || 'Unknown';
+                if (!coachMap[c]) coachMap[c] = [];
+                coachMap[c].push(seat);
+            });
 
-                card.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 14px;">
-                        <div class="coach-badge">${seat.coach}</div>
-                        <div>
-                            <h4 style="font-size: 1.02rem; color: #1e293b;">Berth ${seat.berth} &bull; ${seat.berth_type}</h4>
-                            <div style="display: flex; gap: 8px; margin-top: 4px; font-size: 0.82rem;">
-                                <span class="badge" style="background: #e2e8f0; color: #334155;">${seat.class_name || seat.class_type}</span>
-                                <span class="badge ${seat.is_direct ? 'badge-100' : 'badge-partial'}">
-                                    ${seat.is_direct ? '🟢 DIRECT FULL JOURNEY' : '🟡 ' + seat.coverage_label}
-                                </span>
-                            </div>
-                            <div style="font-size: 0.84rem; font-weight: 600; color: #334155; margin-top: 4px;">
-                                Vacant: ${seat.vacant_from_name} (${seat.vacant_from}) &rarr; ${seat.vacant_to_name} (${seat.vacant_to})
-                            </div>
-                        </div>
+            const sortedCoaches = Object.keys(coachMap).sort(coachNaturalSort);
+
+            // Validate activeCoachFilter
+            if (activeCoachFilter !== 'ALL' && !coachMap[activeCoachFilter]) {
+                activeCoachFilter = 'ALL';
+            }
+
+            // Coach Filter Chips Bar
+            const filterBar = document.createElement('div');
+            filterBar.className = 'coach-filter-bar';
+
+            const filterLabel = document.createElement('span');
+            filterLabel.className = 'coach-filter-label';
+            filterLabel.innerHTML = `🔍 Filter Coach:`;
+            filterBar.appendChild(filterLabel);
+
+            // 'All Coaches' chip
+            const allChip = document.createElement('button');
+            allChip.className = `coach-chip ${activeCoachFilter === 'ALL' ? 'active' : ''}`;
+            allChip.textContent = `All Coaches (${list.length})`;
+            allChip.addEventListener('click', () => {
+                renderAllSeats(seats, filterDirect, 'ALL');
+            });
+            filterBar.appendChild(allChip);
+
+            // Per-coach chips
+            sortedCoaches.forEach(coach => {
+                const chip = document.createElement('button');
+                chip.className = `coach-chip ${activeCoachFilter === coach ? 'active' : ''}`;
+                chip.textContent = `${coach} (${coachMap[coach].length})`;
+                chip.addEventListener('click', () => {
+                    renderAllSeats(seats, filterDirect, coach);
+                });
+                filterBar.appendChild(chip);
+            });
+
+            container.appendChild(filterBar);
+
+            // Determine which coaches to display
+            const coachesToRender = activeCoachFilter === 'ALL' ? sortedCoaches : [activeCoachFilter];
+
+            // Render each coach group
+            coachesToRender.forEach(coach => {
+                const coachSeats = coachMap[coach] || [];
+                // Sort berths numerically
+                coachSeats.sort((a, b) => (parseInt(a.berth, 10) || 0) - (parseInt(b.berth, 10) || 0));
+
+                const section = document.createElement('div');
+                section.className = 'coach-section';
+
+                const header = document.createElement('div');
+                header.className = 'coach-section-header';
+                const classNameBadge = coachSeats[0] && (coachSeats[0].class_name || coachSeats[0].class_type) ?
+                    `<span class="badge" style="margin-left: 8px; background: #e2e8f0; color: #334155;">${coachSeats[0].class_name || coachSeats[0].class_type}</span>` : '';
+                header.innerHTML = `
+                    <div class="coach-section-title">
+                        🚆 Coach <strong style="margin-left: 5px; font-size: 1.05rem;">${coach}</strong>
+                        ${classNameBadge}
+                    </div>
+                    <div class="coach-section-count">
+                        ${coachSeats.length} Berth${coachSeats.length > 1 ? 's' : ''}
                     </div>
                 `;
-                container.appendChild(card);
+                section.appendChild(header);
+
+                coachSeats.forEach(seat => {
+                    const card = document.createElement('div');
+                    card.className = `seat-card ${seat.is_direct ? 'direct' : ''}`;
+
+                    card.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div class="coach-badge">${seat.coach}</div>
+                            <div>
+                                <h4 style="font-size: 1.02rem; color: #1e293b;">Berth ${seat.berth} &bull; ${seat.berth_type}</h4>
+                                <div style="display: flex; gap: 8px; margin-top: 4px; font-size: 0.82rem;">
+                                    <span class="badge" style="background: #e2e8f0; color: #334155;">${seat.class_name || seat.class_type}</span>
+                                    <span class="badge ${seat.is_direct ? 'badge-100' : 'badge-partial'}">
+                                        ${seat.is_direct ? '🟢 DIRECT FULL JOURNEY' : '🟡 ' + seat.coverage_label}
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.84rem; font-weight: 600; color: #334155; margin-top: 4px;">
+                                    Vacant: ${seat.vacant_from_name} (${seat.vacant_from}) &rarr; ${seat.vacant_to_name} (${seat.vacant_to})
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    section.appendChild(card);
+                });
+
+                container.appendChild(section);
             });
         }
 
@@ -1312,11 +1988,11 @@
                 } else if (tab === 'allSeats') {
                     splitContent.style.display = 'none';
                     allContent.style.display = 'block';
-                    renderAllSeats(currentResults ? currentResults.greenSeats || [] : [], false);
+                    renderAllSeats(currentResults ? currentResults.greenSeats || [] : [], false, activeCoachFilter);
                 } else if (tab === 'directSeats') {
                     splitContent.style.display = 'none';
                     allContent.style.display = 'block';
-                    renderAllSeats(currentResults ? currentResults.greenSeats || [] : [], true);
+                    renderAllSeats(currentResults ? currentResults.greenSeats || [] : [], true, activeCoachFilter);
                 }
             });
         });
@@ -1382,7 +2058,7 @@
             const maxOptions = document.getElementById('maxOptions').value;
 
             try {
-                const res = await fetch('/api/live-poll', {
+                const res = await apiFetch('/api/live-poll', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

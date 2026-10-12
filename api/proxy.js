@@ -3,12 +3,13 @@
 // the backend URL, IP, or internal CRIS APIs to the user or browser.
 
 module.exports = async function handler(req, res) {
-    const backendBase = process.env.BACKEND_URL;
+    const customHeader = req.headers['x-backend-url'];
+    const backendBase = (customHeader && customHeader.trim()) || process.env.BACKEND_URL;
 
     if (!backendBase) {
         return res.status(503).json({
             success: false,
-            message: "Backend server is not configured yet. Please configure BACKEND_URL in Vercel Project Settings > Environment Variables."
+            message: "Backend server is not connected. If running from your PC, run Host_Backend_For_Vercel.bat and connect your tunnel, or set BACKEND_URL in Vercel."
         });
     }
 
