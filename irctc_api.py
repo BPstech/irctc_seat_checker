@@ -87,6 +87,9 @@ class IRCTCService:
             opts.add_argument('--disable-gpu')
             opts.add_argument('--disable-software-rasterizer')
             opts.add_argument('--disable-blink-features=AutomationControlled')
+            opts.add_argument('--log-level=3')
+            opts.add_argument('--silent')
+            opts.add_experimental_option('excludeSwitches', ['enable-logging'])
             opts.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
 
             import shutil
