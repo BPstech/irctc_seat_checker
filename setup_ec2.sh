@@ -41,10 +41,7 @@ fi
 echo "[+] Updating system packages..."
 apt-get update -y
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    python3 python3-pip python3-venv git curl wget unzip \
-    fonts-liberation libasound2 libatk-bridge2.0-0 libatk1.0-0 \
-    libcups2 libdbus-1-3 libgdk-pixbuf2.0-0 libnspr4 libnss3 \
-    libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 xdg-utils
+    python3 python3-pip python3-venv git curl wget unzip xdg-utils
 
 # 4. Install Google Chrome (Stable)
 if ! command -v google-chrome &> /dev/null; then
