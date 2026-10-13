@@ -21,12 +21,22 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
-CLOUDFLARED_EXE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cloudflared.exe")
+if sys.platform == 'win32':
+    CLOUDFLARED_EXE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cloudflared.exe")
+    CLOUDFLARED_URL = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
+else:
+    import platform
+    arch = platform.machine().lower()
+    cf_arch = "arm64" if ('arm' in arch or 'aarch64' in arch) else "amd64"
+    CLOUDFLARED_EXE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cloudflared")
+    CLOUDFLARED_URL = f"https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-{cf_arch}"
+
 CLOUDFLARED_LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cloudflared.log")
-CLOUDFLARED_URL = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
 
 def download_cloudflared():
     if os.path.exists(CLOUDFLARED_EXE) and os.path.getsize(CLOUDFLARED_EXE) > 10_000_000:
+        if sys.platform != 'win32' and not os.access(CLOUDFLARED_EXE, os.X_OK):
+            os.chmod(CLOUDFLARED_EXE, 0o755)
         return True
 
     print("[*] Downloading Cloudflare Tunnel tool (~50MB one-time setup)...")
@@ -41,19 +51,29 @@ def download_cloudflared():
                 sys.stdout.flush()
 
         urllib.request.urlretrieve(CLOUDFLARED_URL, CLOUDFLARED_EXE, reporthook=reporthook)
+        if sys.platform != 'win32':
+            os.chmod(CLOUDFLARED_EXE, 0o755)
         print("\n[OK] Cloudflare Tunnel tool downloaded successfully.")
         return True
     except Exception as e:
-        print(f"\n[ERROR] Failed to download cloudflared.exe: {e}")
+        print(f"\n[ERROR] Failed to download cloudflared: {e}")
         return False
 
 def copy_to_clipboard(text):
-    try:
-        p = subprocess.Popen(['clip'], stdin=subprocess.PIPE, shell=True)
-        p.communicate(text.encode('utf-8'))
-        return True
-    except Exception:
-        return False
+    if sys.platform == 'win32':
+        try:
+            p = subprocess.Popen(['clip'], stdin=subprocess.PIPE, shell=True)
+            p.communicate(text.encode('utf-8'))
+            return True
+        except Exception:
+            return False
+    else:
+        try:
+            p = subprocess.Popen(['xclip', '-selection', 'clipboard'], stdin=subprocess.PIPE)
+            p.communicate(text.encode('utf-8'))
+            return True
+        except Exception:
+            return False
 
 def extract_tunnel_url(log_file, timeout_secs=25):
     pattern = re.compile(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com')
