@@ -3,8 +3,8 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/api/:match*",
-      "destination": "/api/proxy?match=:match*"
+      "source": "/api/(.*)",
+      "destination": "/api/proxy?match=$1"
     }
   ],
   "functions": {

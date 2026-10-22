@@ -1,0 +1,34 @@
+{
+  "12301": {
+    "success": true,
+    "trainName": "HOWRAH - NEW DELHI Rajdhani Express",
+    "stationList": [
+      { "stationCode": "HWH", "stationName": "HOWRAH JN", "arrivalTime": "--", "departureTime": "16:50", "dayCount": 1 },
+      { "stationCode": "ASN", "stationName": "ASANSOL JN", "arrivalTime": "18:57", "departureTime": "19:00", "dayCount": 1 },
+      { "stationCode": "DHN", "stationName": "DHANBAD JN", "arrivalTime": "20:00", "departureTime": "20:05", "dayCount": 1 },
+      { "stationCode": "PNME", "stationName": "PARASNATH", "arrivalTime": "20:40", "departureTime": "20:42", "dayCount": 1 },
+      { "stationCode": "KQR", "stationName": "KODERMA JN", "arrivalTime": "21:30", "departureTime": "21:32", "dayCount": 1 },
+      { "stationCode": "GAYA", "stationName": "GAYA JN", "arrivalTime": "22:55", "departureTime": "22:58", "dayCount": 1 },
+      { "stationCode": "DDU", "stationName": "PT DEEN DAYAL UPADHYAYA JN", "arrivalTime": "01:25", "departureTime": "01:35", "dayCount": 2 },
+      { "stationCode": "PRYJ", "stationName": "PRAYAGRAJ JN", "arrivalTime": "03:25", "departureTime": "03:27", "dayCount": 2 },
+      { "stationCode": "CNB", "stationName": "KANPUR CENTRAL", "arrivalTime": "05:25", "departureTime": "05:30", "dayCount": 2 },
+      { "stationCode": "NDLS", "stationName": "NEW DELHI", "arrivalTime": "10:05", "departureTime": "--", "dayCount": 2 }
+    ]
+  },
+  "12302": {
+    "success": true,
+    "trainName": "NEW DELHI - HOWRAH Rajdhani Express",
+    "stationList": [
+      { "stationCode": "NDLS", "stationName": "NEW DELHI", "arrivalTime": "--", "departureTime": "16:55", "dayCount": 1 },
+      { "stationCode": "CNB", "stationName": "KANPUR CENTRAL", "arrivalTime": "21:32", "departureTime": "21:37", "dayCount": 1 },
+      { "stationCode": "PRYJ", "stationName": "PRAYAGRAJ JN", "arrivalTime": "23:43", "departureTime": "23:45", "dayCount": 1 },
+      { "stationCode": "DDU", "stationName": "PT DEEN DAYAL UPADHYAYA JN", "arrivalTime": "01:42", "departureTime": "01:52", "dayCount": 2 },
+      { "stationCode": "GAYA", "stationName": "GAYA JN", "arrivalTime": "04:04", "departureTime": "04:07", "dayCount": 2 },
+      { "stationCode": "KQR", "stationName": "KODERMA JN", "arrivalTime": "05:18", "departureTime": "05:20", "dayCount": 2 },
+      { "stationCode": "PNME", "stationName": "PARASNATH", "arrivalTime": "06:08", "departureTime": "06:10", "dayCount": 2 },
+      { "stationCode": "DHN", "stationName": "DHANBAD JN", "arrivalTime": "06:55", "departureTime": "07:00", "dayCount": 2 },
+      { "stationCode": "ASN", "stationName": "ASANSOL JN", "arrivalTime": "07:59", "departureTime": "08:04", "dayCount": 2 },
+      { "stationCode": "HWH", "stationName": "HOWRAH JN", "arrivalTime": "09:55", "departureTime": "--", "dayCount": 2 }
+    ]
+  }
+}

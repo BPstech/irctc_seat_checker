@@ -3,6 +3,8 @@ irctc_api.py - Direct IRCTC Online Charts automation engine.
 Uses a headless browser session to securely communicate with IRCTC/CRIS internal APIs.
 """
 
+import os
+import json
 import re
 import time
 import threading
@@ -76,8 +78,40 @@ class IRCTCService:
         self.driver_lock = threading.Lock()
         self.schedule_cache = {}
         self.classes_cache = {}
+        self._load_cache()
         self._init_driver()
         self._initialized = True
+
+    def _load_cache(self):
+        """Preload schedule cache from disk if available"""
+        cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schedule_cache.json')
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    now = time.time()
+                    for k, v in data.items():
+                        self.schedule_cache[str(k).strip()] = (now, v)
+                logger.info(f"Loaded {len(self.schedule_cache)} train schedules from disk cache.")
+            except Exception as e:
+                logger.warning(f"Could not load schedule_cache.json: {e}")
+
+    def _save_cache(self, train_no, data):
+        """Persist schedule to disk cache"""
+        cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schedule_cache.json')
+        try:
+            existing = {}
+            if os.path.exists(cache_file):
+                try:
+                    with open(cache_file, 'r', encoding='utf-8') as f:
+                        existing = json.load(f)
+                except Exception:
+                    existing = {}
+            existing[str(train_no).strip()] = data
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(existing, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not save to schedule_cache.json: {e}")
 
     def _init_driver(self):
         try:
@@ -161,8 +195,28 @@ class IRCTCService:
                     'bmirak': 'webbm'
                 }
             })
-            .then(r => r.json())
-            .then(data => callback({success: true, data: data}))
+            .then(async r => {
+                const text = await r.text();
+                try {
+                    const data = JSON.parse(text);
+                    callback({success: r.ok, data: data, status: r.status});
+                } catch(e) {
+                    if (text.includes('MAINTENANCE') || text.includes('maintenance')) {
+                        callback({
+                            success: false,
+                            status: r.status,
+                            isMaintenance: true,
+                            error: 'IRCTC servers are currently under daily maintenance downtime (23:45 to 00:20 hrs IST). Normal chart queries resume automatically at 00:20 IST.'
+                        });
+                    } else {
+                        callback({
+                            success: false,
+                            status: r.status,
+                            error: 'IRCTC server returned non-JSON response (Status ' + r.status + ')'
+                        });
+                    }
+                }
+            })
             .catch(err => callback({success: false, error: err.toString()}));
             """
             try:
@@ -178,6 +232,7 @@ class IRCTCService:
                     }
                     if result['stationList']:
                         self.schedule_cache[t_key] = (now, result)
+                        self._save_cache(t_key, result)
                     return result
                 return {'success': False, 'message': res.get('error', 'Failed to fetch schedule')}
             except Exception as e:
@@ -199,8 +254,28 @@ class IRCTCService:
                 },
                 body: JSON.stringify(payload)
             })
-            .then(r => r.json())
-            .then(data => callback({success: true, data: data}))
+            .then(async r => {
+                const text = await r.text();
+                try {
+                    const data = JSON.parse(text);
+                    callback({success: r.ok, data: data, status: r.status});
+                } catch(e) {
+                    if (text.includes('MAINTENANCE') || text.includes('maintenance')) {
+                        callback({
+                            success: false,
+                            status: r.status,
+                            isMaintenance: true,
+                            error: 'IRCTC servers are currently under daily maintenance downtime (23:45 to 00:20 hrs IST). Normal chart queries resume automatically at 00:20 IST.'
+                        });
+                    } else {
+                        callback({
+                            success: false,
+                            status: r.status,
+                            error: 'IRCTC server returned non-JSON response (Status ' + r.status + ')'
+                        });
+                    }
+                }
+            })
             .catch(err => callback({success: false, error: err.toString()}));
             """
             try:
@@ -261,6 +336,10 @@ class IRCTCService:
             if prev_classes:
                 classes_found = sorted(list(prev_classes))
 
+        # 3. Graceful fallback to standard classes if not prepared yet or during maintenance
+        if not classes_found:
+            classes_found = ['1A', '2A', '3A', '3E', 'SL', '2S']
+
         # Standard class sorting order
         class_order = ['1A', '2A', '3A', '3E', 'EC', 'EA', 'CC', 'EV', 'SL', 'FC', '2S', 'VS', 'VC']
         def sort_key(c):
@@ -305,8 +384,15 @@ class IRCTCService:
                         chartType: 1
                     })
                 })
-                .then(r => r.json())
-                .then(data => ({ cls: cls, vbd: data.vbd || [] }))
+                .then(async r => {
+                    const text = await r.text();
+                    try {
+                        const data = JSON.parse(text);
+                        return { cls: cls, vbd: data.vbd || [] };
+                    } catch {
+                        return { cls: cls, vbd: [] };
+                    }
+                })
                 .catch(() => ({ cls: cls, vbd: [] }))
             );
 
@@ -347,8 +433,28 @@ class IRCTCService:
                 },
                 body: JSON.stringify(payload)
             })
-            .then(r => r.json())
-            .then(data => callback({success: true, data: data}))
+            .then(async r => {
+                const text = await r.text();
+                try {
+                    const data = JSON.parse(text);
+                    callback({success: r.ok, data: data, status: r.status});
+                } catch(e) {
+                    if (text.includes('MAINTENANCE') || text.includes('maintenance')) {
+                        callback({
+                            success: false,
+                            status: r.status,
+                            isMaintenance: true,
+                            error: 'IRCTC servers are currently under daily maintenance downtime (23:45 to 00:20 hrs IST). Normal chart queries resume automatically at 00:20 IST.'
+                        });
+                    } else {
+                        callback({
+                            success: false,
+                            status: r.status,
+                            error: 'IRCTC server returned non-JSON response (Status ' + r.status + ')'
+                        });
+                    }
+                }
+            })
             .catch(err => callback({success: false, error: err.toString()}));
             """
             try:
@@ -440,7 +546,13 @@ class IRCTCService:
 
         # 3. Fetch train composition (start with origin station or source station)
         comp_res = self.get_train_composition(train_no, journey_date, origin_stn['stationCode'])
-        comp_data = comp_res.get('data', {}) if comp_res.get('success') else {}
+        if not comp_res.get('success'):
+            return {
+                'success': False,
+                'chartPrepared': False,
+                'message': comp_res.get('message', 'Failed to retrieve train composition from IRCTC.')
+            }
+        comp_data = comp_res.get('data', {})
 
         # If chart not prepared from origin, try source station
         if comp_data.get('error') == "Chart not prepared" and origin_stn['stationCode'] != source_station_code:

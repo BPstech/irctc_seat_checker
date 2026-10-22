@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRCTC Green Seat Finder & Split Journey Planner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --success: #16a34a;
+            --success-bg: #dcfce7;
+            --success-border: #86efac;
+            --warning: #d97706;
+            --warning-bg: #fef3c7;
+            --danger: #dc2626;
+            --danger-bg: #fee2e2;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-600: #475569;
+            --gray-800: #1e293b;
+            --gold: #b45309;
+            --gold-bg: #fffbeb;
+            --gold-border: #fde68a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #312e81 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 16px;
+            color: var(--gray-800);
+        }
+
+        .container {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4);
+            max-width: 860px;
+            width: 100%;
+            padding: 36px;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            color: #1e1b4b;
+            font-size: 2.1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--gray-600);
+            font-size: 0.98rem;
+            margin-top: 4px;
+        }
+
+        .pill-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: 0.82rem;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        /* Live Monitor Header Bar */
+        .live-bar {
+            background: #f8fafc;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 14px;
+            padding: 12px 18px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .live-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+
+        .dot.active {
+            background: var(--success);
+            box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.25);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .live-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 0.86rem;
+            font-weight: 600;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #cbd5e1;
+            border-radius: 9999px;
+            transition: background 0.2s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--success);
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(20px);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: var(--gray-800);
+            background-color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        .train-badge {
+            display: none;
+            margin-top: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--success);
+            background: var(--success-bg);
+            padding: 6px 12px;
+            border-radius: 8px;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--success-border);
+        }
+
+        .date-chips {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .chip {
+            background: var(--gray-100);
+            border: 1px solid var(--gray-200);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .chip:hover, .chip.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            border-color: #c7d2fe;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.45);
+        }
+
+        .btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Alerts and Toasts */
+        .alert-toast {
+            display: none;
+            margin-top: 18px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-8px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .alert-toast.danger {
+            background: var(--danger-bg);
+            color: #991b1b;
+            border: 1.5px solid #fca5a5;
+        }
+
+        .alert-toast.success {
+            background: var(--success-bg);
+            color: #166534;
+            border: 1.5px solid var(--success-border);
+        }
+
+        .alert-toast.warning {
+            background: var(--warning-bg);
+            color: #92400e;
+            border: 1.5px solid #fde68a;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 26px;
+        }
+
+        .spinner {
+            border: 3.5px solid var(--primary-light);
+            border-top: 3.5px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Results & Tabs */
+        .results-container {
+            display: none;
+            margin-top: 24px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            padding: 12px 10px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card.featured {
+            background: var(--success-bg);
+            border-color: var(--success-border);
+        }
+
+        .stat-value {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .stat-card.featured .stat-value {
+            color: var(--success);
+        }
+
+        .stat-label {
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-top: 2px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid var(--gray-100);
+            padding-bottom: 10px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--gray-600);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        /* Itinerary Cards for Split Options */
+        .split-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 540px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .split-card {
+            background: #ffffff;
+            border: 2px solid var(--gray-200);
+            border-radius: 16px;
+            padding: 18px 20px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .split-card:hover {
+            border-color: #a5b4fc;
+            box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.08);
+        }
+
+        .split-card.same-coach {
+            border-color: #86efac;
+            background: #f0fdf4;
+        }
+
+        .split-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed var(--gray-200);
+        }
+
+        .split-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #1e293b;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-same-coach {
+            background: #bbf7d0;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .badge-transfer {
+            background: #fed7aa;
+            color: #c2410c;
+        }
+
+        .badge-100 {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-partial {
+            background: #fef08a;
+            color: #854d0e;
+        }
+
+        /* Timeline Journey Legs */
+        .timeline {
+            position: relative;
+            padding-left: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 10px;
+            bottom: 10px;
+            width: 2px;
+            background: #cbd5e1;
+        }
+
+        .timeline-step {
+            position: relative;
+        }
+
+        .timeline-node {
+            position: absolute;
+            left: -24px;
+            top: 4px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .timeline-step.switch .timeline-node {
+            background: #f59e0b;
+            box-shadow: 0 0 0 2px #f59e0b;
+        }
+
+        .step-header {
+            font-size: 0.94rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .step-pax-seats {
+            margin-top: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .pax-seat-chip {
+            background: #f8fafc;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .pax-seat-chip .coach {
+            background: #1e1b4b;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .switch-banner {
+            background: var(--gold-bg);
+            border: 1px solid var(--gold-border);
+            color: var(--gold);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin: 6px 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Single seats list */
+        .seat-card {
+            background: #ffffff;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .seat-card.direct {
+            border-left: 5px solid var(--success);
+            background: #f0fdf4;
+        }
+
+        .coach-badge {
+            background: #1e1b4b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            min-width: 54px;
+            text-align: center;
+        }
+
+        /* Coach Filter Chips Bar */
+        .coach-filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 12px;
+            align-items: center;
+        }
+
+        .coach-filter-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #475569;
+            margin-right: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .coach-chip {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1px solid var(--gray-300);
+            background: white;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .coach-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #eff6ff;
+            transform: translateY(-1px);
+        }
+
+        .coach-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Coach Section Header */
+        .coach-section {
+            margin-bottom: 18px;
+        }
+
+        .coach-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+            background: #f1f5f9;
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+        }
+
+        .coach-section-title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 0.96rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .coach-section-count {
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #334155;
+            padding: 3px 10px;
+            border-radius: 12px;
+        }
+
+        /* Mobile Browser Responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 14px 10px;
+                align-items: flex-start;
+            }
+
+            .container {
+                padding: 22px 16px;
+                border-radius: 20px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+            }
+
+            .header h1 {
+                font-size: 1.65rem;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .header p {
+                font-size: 0.88rem;
+            }
+
+            .live-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+                padding: 12px 14px;
+            }
+
+            .live-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+
+            /* Prevent auto-zoom on iOS mobile browsers */
+            input, select {
+                font-size: 16px !important;
+                padding: 11px 12px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 10px 6px;
+            }
+
+            .stat-value {
+                font-size: 1.25rem;
+            }
+
+            .stat-label {
+                font-size: 0.7rem;
+            }
+
+            .tabs {
+                gap: 6px;
+                padding-bottom: 8px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            .tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .tab-btn {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+                flex-shrink: 0;
+            }
+
+            .coach-filter-bar {
+                padding: 10px;
+                gap: 6px;
+            }
+
+            .coach-chip {
+                padding: 5px 10px;
+                font-size: 0.78rem;
+            }
+
+            .coach-section-header {
+                padding: 8px 12px;
+            }
+
+            .coach-section-title {
+                font-size: 0.9rem;
+            }
+
+            .split-card {
+                padding: 14px 12px;
+                border-radius: 14px;
+            }
+
+            .split-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            .timeline {
+                padding-left: 20px;
+                gap: 12px;
+            }
+
+            .timeline-node {
+                left: -20px;
+                width: 14px;
+                height: 14px;
+                top: 3px;
+            }
+
+            .step-header {
+                font-size: 0.88rem;
+            }
+
+            .pax-seat-chip {
+                font-size: 0.76rem;
+                padding: 3px 8px;
+            }
+
+            .seat-card {
+                padding: 12px 14px;
+                border-radius: 10px;
+            }
+
+            .coach-badge {
+                font-size: 0.95rem;
+                padding: 6px 10px;
+                min-width: 48px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px 6px;
+            }
+
+            .container {
+                padding: 16px 12px;
+                border-radius: 16px;
+            }
+
+            .header h1 {
+                font-size: 1.4rem;
+            }
+
+            .pill-badge {
+                font-size: 0.74rem;
+                padding: 4px 10px;
+            }
+
+            .date-chips {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .chip {
+                font-size: 0.75rem;
+                padding: 4px 8px;
+            }
+
+            .btn {
+                padding: 12px;
+                font-size: 0.98rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚂 IRCTC Green Seat Finder</h1>
+            <p>Smart Split-Journey Planner & Real-Time Vacancy Monitor</p>
+            <div class="pill-badge">
+                ⚡ Direct CRIS Live Seat Charts Integration
+            </div>
+        </div>
+
+        <!-- Live Real-Time Monitoring Bar -->
+        <div class="live-bar">
+            <div class="live-status">
+                <span class="dot" id="liveDot"></span>
+                <span id="liveStatusText">Live Monitor: Inactive</span>
+                <span id="liveCountdown" style="font-size: 0.78rem; color: #64748b; font-weight: 500;"></span>
+            </div>
+            <div class="live-controls">
+                <select id="liveInterval" style="width: auto; padding: 6px 10px; font-size: 0.82rem;">
+                    <option value="15">Check every 15s</option>
+                    <option value="30" selected>Check every 30s</option>
+                    <option value="60">Check every 60s</option>
+                </select>
+                <div class="switch-container" id="toggleLiveMonitor">
+                    <div class="toggle-switch" id="toggleSwitch">
+                        <div class="toggle-knob"></div>
+                    </div>
+                    <span>Auto-Refresh</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Change Notification Banner -->
+        <div class="alert-toast" id="liveToast">
+            <span id="toastMessage">Alert text</span>
+            <button onclick="dismissToast()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: inherit;">&times;</button>
+        </div>
+
+        <form id="seatForm">
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="trainNo">Train Number</label>
+                    <input type="text" id="trainNo" placeholder="e.g. 12301, 12345, 12951" maxlength="5" required autocomplete="off">
+                    <div class="train-badge" id="trainBadge">
+                        <span>🚆</span> <span id="trainNameText">Loading train details...</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="origin">Origin / Boarding Station</label>
+                    <input list="stationsList" id="origin" placeholder="e.g. HWH, DELHI" required autocomplete="off">
+                    <datalist id="stationsList"></datalist>
+                </div>
+
+                <div class="form-group">
+                    <label for="destination">Destination Station</label>
+                    <input list="stationsList" id="destination" placeholder="e.g. NDLS, GHY" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="journeyDate">Journey Date</label>
+                    <input type="date" id="journeyDate" required>
+                    <div class="date-chips">
+                        <span class="chip active" id="chipToday">Today</span>
+                        <span class="chip" id="chipTomorrow">Tomorrow</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="classType">Class Preference</label>
+                    <select id="classType" disabled>
+                        <option value="ALL">Enter train number to load classes...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="passengers">Number of Passengers (Together)</label>
+                    <select id="passengers">
+                        <option value="1">1 Passenger (Solo)</option>
+                        <option value="2">2 Passengers</option>
+                        <option value="3">3 Passengers (Traveling with 2 others)</option>
+                        <option value="4">4 Passengers</option>
+                        <option value="5">5 Passengers</option>
+                        <option value="6">6 Passengers</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="maxOptions">Split Journey Options to Generate</label>
+                    <select id="maxOptions">
+                        <option value="3">Top 3 Best Options</option>
+                        <option value="5" selected>Top 5 Best Options</option>
+                        <option value="10">Top 10 Options</option>
+                        <option value="20">All Available Options</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="searchBtn">
+                🔍 Find Green Seats & Split Options
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="font-weight: 700; color: #1e1b4b;">Calculating Optimal Seat Combinations...</p>
+            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Analyzing same-coach transfers and destination coverage</p>
+        </div>
+
+        <div class="alert-toast" id="statusBox" style="display: none; margin-top: 20px;"></div>
+
+        <div class="results-container" id="resultsContainer">
+            <div class="stats-grid">
+                <div class="stat-card featured">
+                    <div class="stat-value" id="statSameCoach">0</div>
+                    <div class="stat-label">Same-Coach Itineraries</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statDirect">0</div>
+                    <div class="stat-label">100% Reach Destination</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statSplitOpts">0</div>
+                    <div class="stat-label">Split Itineraries</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statTotalSeats">0</div>
+                    <div class="stat-label">Total Vacant Berths</div>
+                </div>
+            </div>
+
+            <div class="tabs" id="tabs">
+                <button class="tab-btn active" data-tab="split">✨ Smart Split Itineraries (<span id="countSplitTab">0</span>)</button>
+                <button class="tab-btn" data-tab="allSeats">🟢 All Vacant Berths (<span id="countAllSeatsTab">0</span>)</button>
+                <button class="tab-btn" data-tab="directSeats">🎯 Direct Seats Only (<span id="countDirectTab">0</span>)</button>
+            </div>
+
+            <!-- Tab Content: Split Itineraries -->
+            <div id="tabContentSplit" class="split-list"></div>
+
+            <!-- Tab Content: All Individual Seats -->
+            <div id="tabContentAllSeats" style="display: none; max-height: 520px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentResults = null;
+        let routeStations = [];
+        let debounceTimer;
+        let knownSeatIds = new Set();
+        let isLiveMonitoring = false;
+        let liveTimer = null;
+        let countdownTimer = null;
+        let remainingSeconds = 30;
+
+        async function apiFetch(endpoint, options = {}) {
+            return fetch(endpoint, options);
+        }
+
+        // DOM elements
+        const trainNoInput = document.getElementById('trainNo');
+        const trainBadge = document.getElementById('trainBadge');
+        const trainNameText = document.getElementById('trainNameText');
+        const stationsList = document.getElementById('stationsList');
+        const classSelect = document.getElementById('classType');
+        const journeyDateInput = document.getElementById('journeyDate');
+        const searchBtn = document.getElementById('searchBtn');
+        const loading = document.getElementById('loading');
+        const statusBox = document.getElementById('statusBox');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const toggleSwitch = document.getElementById('toggleSwitch');
+        const liveDot = document.getElementById('liveDot');
+        const liveStatusText = document.getElementById('liveStatusText');
+        const liveCountdown = document.getElementById('liveCountdown');
+        const liveToast = document.getElementById('liveToast');
+        const toastMessage = document.getElementById('toastMessage');
+
+        // Sound chime generator using Web Audio API
+        function playChime(isAlert = false) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                if (isAlert) {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(440, ctx.currentTime);
+                    osc.frequency.setValueAtTime(330, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.4);
+                } else {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.35);
+                }
+            } catch(e) {}
+        }
+
+        // Reset & Auto-clean functions
+        function showToast(msg, type = 'danger') {
+            toastMessage.textContent = msg;
+            liveToast.className = `alert-toast ${type}`;
+            liveToast.style.display = 'flex';
+        }
+
+        function dismissToast() {
+            liveToast.style.display = 'none';
+        }
+
+        function stopLiveMonitoring() {
+            clearInterval(liveTimer);
+            clearInterval(countdownTimer);
+        }
+
+        function resetLiveMonitoring() {
+            isLiveMonitoring = false;
+            if (toggleSwitch) toggleSwitch.classList.remove('active');
+            if (liveDot) liveDot.classList.remove('active');
+            if (liveStatusText) liveStatusText.textContent = 'Live Monitor: Inactive';
+            if (liveCountdown) liveCountdown.textContent = '';
+            stopLiveMonitoring();
+            dismissToast();
+            knownSeatIds.clear();
+        }
+
+        function cleanResultsOnly() {
+            if (resultsContainer) resultsContainer.style.display = 'none';
+
+            const splitTab = document.getElementById('tabContentSplit');
+            if (splitTab) splitTab.innerHTML = '';
+            const allSeatsTab = document.getElementById('tabContentAllSeats');
+            if (allSeatsTab) allSeatsTab.innerHTML = '';
+
+            document.getElementById('statSameCoach').textContent = '0';
+            document.getElementById('statDirect').textContent = '0';
+            document.getElementById('statSplitOpts').textContent = '0';
+            document.getElementById('statTotalSeats').textContent = '0';
+            document.getElementById('countSplitTab').textContent = '0';
+            document.getElementById('countAllSeatsTab').textContent = '0';
+            document.getElementById('countDirectTab').textContent = '0';
+
+            if (statusBox) {
+                statusBox.style.display = 'none';
+                statusBox.textContent = '';
+            }
+
+            if (searchBtn) searchBtn.disabled = false;
+            if (loading) loading.style.display = 'none';
+
+            resetLiveMonitoring();
+            activeCoachFilter = 'ALL';
+            currentResults = null;
+        }
+
+        function cleanEverything() {
+            // Clean previous results, status alerts, and live monitoring
+            cleanResultsOnly();
+
+            // Clear route stations and station inputs
+            routeStations = [];
+            const originInput = document.getElementById('origin');
+            const destInput = document.getElementById('destination');
+            if (originInput) originInput.value = '';
+            if (destInput) destInput.value = '';
+            if (stationsList) stationsList.innerHTML = '';
+
+            // Reset train badge
+            if (trainBadge) trainBadge.style.display = 'none';
+            if (trainNameText) trainNameText.textContent = '';
+
+            // Reset class preference dropdown
+            if (classSelect) {
+                classSelect.innerHTML = '<option value="ALL">Enter 5-digit train number...</option>';
+                classSelect.disabled = true;
+            }
+        }
+
+        // Dynamically update class options based on train composition
+        function updateClassPreferences(classes) {
+            classSelect.innerHTML = '';
+            if (classes && classes.length > 0) {
+                const classCodes = classes.map(c => c.code).join(', ');
+                const allOpt = document.createElement('option');
+                allOpt.value = 'ALL';
+                allOpt.textContent = `All Available Classes (${classCodes})`;
+                classSelect.appendChild(allOpt);
+
+                classes.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.code;
+                    opt.textContent = c.name;
+                    classSelect.appendChild(opt);
+                });
+            } else {
+                // Fallback default classes
+                const defaultClasses = [
+                    { code: 'ALL', name: 'All Available Classes' },
+                    { code: 'SL', name: 'Sleeper (SL)' },
+                    { code: '3A', name: 'AC 3 Tier (3A)' },
+                    { code: '2A', name: 'AC 2 Tier (2A)' },
+                    { code: '1A', name: 'AC First Class (1A)' },
+                    { code: '3E', name: 'AC 3 Economy (3E)' },
+                    { code: 'CC', name: 'AC Chair Car (CC)' },
+                    { code: '2S', name: 'Second Sitting (2S)' },
+                    { code: 'EC', name: 'Exec. Chair Car (EC)' }
+                ];
+                defaultClasses.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.code;
+                    opt.textContent = c.name;
+                    classSelect.appendChild(opt);
+                });
+            }
+            classSelect.disabled = false;
+        }
+
+        // Date initialization
+        const today = new Date();
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const formatDate = (d) => {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        };
+
+        const todayStr = formatDate(today);
+        const tomorrowStr = formatDate(tomorrow);
+        journeyDateInput.value = todayStr;
+
+        function handleDateChange() {
+            const val = trainNoInput.value.trim();
+            if (val.length === 5) {
+                if (currentResults) {
+                    cleanResultsOnly();
+                }
+                fetchTrainInfo(val);
+            }
+        }
+
+        document.getElementById('chipToday').addEventListener('click', function() {
+            journeyDateInput.value = todayStr;
+            this.classList.add('active');
+            document.getElementById('chipTomorrow').classList.remove('active');
+            handleDateChange();
+        });
+
+        document.getElementById('chipTomorrow').addEventListener('click', function() {
+            journeyDateInput.value = tomorrowStr;
+            this.classList.add('active');
+            document.getElementById('chipToday').classList.remove('active');
+            handleDateChange();
+        });
+
+        journeyDateInput.addEventListener('change', function() {
+            handleDateChange();
+        });
+
+        const trainInfoClientCache = new Map();
+
+        // Train Number input event: auto clean everything and fetch live info
+        trainNoInput.addEventListener('input', function() {
+            const val = this.value.trim();
+            clearTimeout(debounceTimer);
+
+            // AUTO CLEAN EVERYTHING on new train number input
+            cleanEverything();
+
+            if (val.length === 5) {
+                trainBadge.style.display = 'inline-flex';
+                trainNameText.textContent = 'Fetching train route & classes...';
+
+                debounceTimer = setTimeout(() => fetchTrainInfo(val), 200);
+            }
+        });
+
+        async function fetchTrainInfo(trainNo) {
+            const journeyDate = journeyDateInput.value;
+            const cacheKey = `${trainNo}_${journeyDate}`;
+
+            if (trainInfoClientCache.has(cacheKey)) {
+                applyTrainData(trainInfoClientCache.get(cacheKey));
+                return;
+            }
+
+            try {
+                trainBadge.style.display = 'inline-flex';
+                trainNameText.textContent = 'Fetching train route & classes...';
+                
+                const res = await apiFetch(`/api/train-info/${trainNo}?date=${journeyDate}`);
+                const data = await res.json().catch(() => ({}));
+                
+                if (res.ok && data.success && data.stations && data.stations.length > 0) {
+                    trainInfoClientCache.set(cacheKey, data);
+                    applyTrainData(data);
+                } else {
+                    const msg = data.message || 'Train route not found';
+                    trainNameText.textContent = msg;
+                    updateClassPreferences([]);
+                }
+            } catch (err) {
+                trainNameText.textContent = err.message || 'Route details not found';
+                updateClassPreferences([]);
+            }
+        }
+
+        function applyTrainData(data) {
+            routeStations = data.stations;
+            trainNameText.textContent = `${data.trainNo} - ${data.trainName}`;
+            stationsList.innerHTML = '';
+            
+            data.stations.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.code;
+                opt.label = `${s.name} (${s.code})`;
+                stationsList.appendChild(opt);
+            });
+
+            const originInput = document.getElementById('origin');
+            const destInput = document.getElementById('destination');
+            if (originInput) originInput.value = data.stations[0].code;
+            if (destInput) destInput.value = data.stations[data.stations.length - 1].code;
+
+            // Update class preference dropdown with train's exact classes
+            updateClassPreferences(data.classes);
+        }
+
+        // Search Form Submit
+        document.getElementById('seatForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            executeSearch();
+        });
+
+        async function executeSearch() {
+            const trainNo = trainNoInput.value.trim();
+            const origin = document.getElementById('origin').value.trim();
+            const destination = document.getElementById('destination').value.trim();
+            const journeyDate = journeyDateInput.value;
+            const classType = document.getElementById('classType').value;
+            const passengers = document.getElementById('passengers').value;
+            const maxOptions = document.getElementById('maxOptions').value;
+
+            const searchBtn = document.getElementById('searchBtn');
+            const loading = document.getElementById('loading');
+            const statusBox = document.getElementById('statusBox');
+            const resultsContainer = document.getElementById('resultsContainer');
+
+            searchBtn.disabled = true;
+            loading.style.display = 'block';
+            statusBox.style.display = 'none';
+            resultsContainer.style.display = 'none';
+
+            try {
+                const response = await apiFetch('/api/find-seats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trainNo, origin, destination, journeyDate, classType, passengers, maxOptions })
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Failed to start search');
+                }
+
+                pollStatus(data.searchId);
+            } catch (err) {
+                showStatus(err.message, 'danger');
+                searchBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        async function pollStatus(searchId) {
+            try {
+                const res = await apiFetch(`/api/search-status/${searchId}`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    showStatus(data.message || 'Error checking search status', 'danger');
+                    finishSearch();
+                    return;
+                }
+
+                if (data.status === 'completed') {
+                    handleSearchResults(data.results);
+                    finishSearch();
+                } else {
+                    setTimeout(() => pollStatus(searchId), 1000);
+                }
+            } catch (err) {
+                showStatus('Error polling search status', 'danger');
+                finishSearch();
+            }
+        }
+
+        function finishSearch() {
+            document.getElementById('searchBtn').disabled = false;
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showStatus(msg, type = 'info') {
+            const statusBox = document.getElementById('statusBox');
+            statusBox.textContent = msg;
+            statusBox.className = `alert-toast ${type}`;
+            statusBox.style.display = 'flex';
+        }
+
+        function handleSearchResults(res) {
+            currentResults = res;
+            const resultsContainer = document.getElementById('resultsContainer');
+            if (!res.success) {
+                showStatus(res.message || 'Search failed', 'danger');
+                return;
+            }
+
+            if (!res.chartPrepared) {
+                showStatus(res.message, 'warning');
+                return;
+            }
+
+            // Track known seats for live delta comparison
+            knownSeatIds = new Set((res.greenSeats || []).map(s => s.seat_id));
+
+            showStatus(res.message, 'success');
+
+            const splitOpts = res.splitOptions || [];
+            const seats = res.greenSeats || [];
+            const directSeats = seats.filter(s => s.is_direct);
+
+            // Update stats grid
+            document.getElementById('statSameCoach').textContent = res.sameCoachCount || 0;
+            document.getElementById('statDirect').textContent = res.destReachedCount || 0;
+            document.getElementById('statSplitOpts').textContent = splitOpts.length;
+            document.getElementById('statTotalSeats').textContent = seats.length;
+
+            document.getElementById('countSplitTab').textContent = splitOpts.length;
+            document.getElementById('countAllSeatsTab').textContent = seats.length;
+            document.getElementById('countDirectTab').textContent = directSeats.length;
+
+            renderSplitItineraries(splitOpts);
+            const activeTabBtn = document.querySelector('.tab-btn.active');
+            const activeTab = activeTabBtn ? activeTabBtn.getAttribute('data-tab') : 'split';
+            if (activeTab === 'directSeats') {
+                renderAllSeats(seats, true, activeCoachFilter);
+            } else {
+                renderAllSeats(seats, false, activeCoachFilter);
+            }
+
+            resultsContainer.style.display = 'block';
+
+            if (isLiveMonitoring) {
+                restartLiveTimer();
+            }
+        }
+
+        function renderSplitItineraries(options) {
+            const container = document.getElementById('tabContentSplit');
+            container.innerHTML = '';
+
+            if (options.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #64748b;">
+                        <h3>No split journey combinations found for ${document.getElementById('passengers').value} passenger(s)</h3>
+                        <p style="font-size: 0.9rem; margin-top: 6px;">Check 'All Vacant Berths' tab to see vacant berths on individual segments.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            options.forEach((opt, idx) => {
+                const card = document.createElement('div');
+                card.className = `split-card ${opt.same_coach_overall ? 'same-coach' : ''}`;
+
+                let headerBadges = '';
+                if (opt.boarding_reached && opt.dest_reached) {
+                    headerBadges += `<span class="badge badge-100">🟢 100% FULL JOURNEY</span>`;
+                } else if (!opt.boarding_reached && opt.dest_reached) {
+                    headerBadges += `<span class="badge badge-partial">🟡 LONGEST TRAVEL: ${opt.coverage_pct}% (Seat from ${opt.start_station} &rarr; Reaches Dest)</span>`;
+                } else if (opt.boarding_reached && !opt.dest_reached) {
+                    headerBadges += `<span class="badge badge-partial">🟡 LONGEST TRAVEL: ${opt.coverage_pct}% (From Boarding &rarr; ${opt.end_station})</span>`;
+                } else {
+                    headerBadges += `<span class="badge badge-partial">🟡 LONGEST TRAVEL: ${opt.coverage_pct}% (${opt.start_station} &rarr; ${opt.end_station})</span>`;
+                }
+
+                if (opt.same_coach_overall) {
+                    headerBadges += `<span class="badge badge-same-coach">🏆 SAME COACH (${opt.coach_summary})</span>`;
+                } else {
+                    headerBadges += `<span class="badge badge-transfer">🔄 COACH TRANSFER (${opt.coach_summary})</span>`;
+                }
+
+                // Top banner for non-boarding start (closest after passing boarding)
+                let startBanner = '';
+                if (opt.start_offset_stops > 0) {
+                    startBanner = `
+                        <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.86rem; color: #1e40af; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <span>🚶</span>
+                            <span>Board at your station, wait/unreserved for <strong>${opt.start_offset_stops} stop(s)</strong> &rarr; Take confirmed seat(s) at <strong>${opt.start_station_name} (${opt.start_station})</strong> for the next <strong>${opt.hops_covered} stops (${opt.coverage_pct}% of trip)</strong>!</span>
+                        </div>
+                    `;
+                }
+
+                // Bottom banner for non-dest end (closest before reaching destination)
+                let endBanner = '';
+                if (opt.end_offset_stops > 0) {
+                    endBanner = `
+                        <div style="background: #fefce8; border: 1.5px solid #fef08a; border-radius: 10px; padding: 10px 14px; margin-top: 14px; font-size: 0.86rem; color: #854d0e; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <span>📍</span>
+                            <span>Seat stretch ends at <strong>${opt.end_station_name} (${opt.end_station})</strong> &bull; Only <strong>${opt.end_offset_stops} stop(s) remaining</strong> to your final destination!</span>
+                        </div>
+                    `;
+                }
+
+                let legsHtml = '';
+                opt.legs.forEach((leg, lIdx) => {
+                    const isSwitch = (lIdx > 0);
+                    let paxSeatsHtml = leg.seats.map((s, pIdx) => `
+                        <div class="pax-seat-chip">
+                            <span>Passenger ${pIdx + 1}:</span>
+                            <span class="coach">${s.coach}</span>
+                            <span>Berth ${s.berth} (${s.berth_type})</span>
+                            <span style="color: #64748b; font-size: 0.75rem;">[${s.class_type}]</span>
+                        </div>
+                    `).join('');
+
+                    legsHtml += `
+                        <div class="timeline-step ${isSwitch ? 'switch' : ''}">
+                            <div class="timeline-node"></div>
+                            <div class="step-header">
+                                <span>Leg ${leg.leg_num}: ${leg.from_name} (${leg.from_code}) &rarr; ${leg.to_name} (${leg.to_code})</span>
+                                ${isSwitch ? (opt.same_coach_overall ? '<span class="switch-banner">🎯 Seat change inside same coach (No coach transfer!)</span>' : '<span class="switch-banner" style="background:#fed7aa; color:#9a3412;">🚶 Change to Coach ' + leg.coach + '</span>') : ''}
+                            </div>
+                            <div class="step-pax-seats">${paxSeatsHtml}</div>
+                        </div>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div class="split-header">
+                        <div class="split-title">
+                            <span>Option ${idx + 1}</span>
+                            <span style="font-size: 0.85rem; color: #64748b; font-weight: 500;">(${opt.legs_count} Leg${opt.legs_count > 1 ? 's' : ''}, ${opt.splits_count} Seat Change${opt.splits_count === 1 ? '' : 's'})</span>
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            ${headerBadges}
+                        </div>
+                    </div>
+                    ${startBanner}
+                    <div class="timeline">
+                        ${legsHtml}
+                    </div>
+                    ${endBanner}
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        let activeCoachFilter = 'ALL';
+
+        function coachNaturalSort(a, b) {
+            const parse = (c) => {
+                const m = String(c || '').trim().match(/^([A-Za-z]+)(\d+)?/);
+                if (!m) return { pfx: String(c || '').toUpperCase(), num: 0 };
+                return { pfx: m[1].toUpperCase(), num: parseInt(m[2] || '0', 10) };
+            };
+            const classOrder = { 'H': 1, 'HA': 2, 'A': 3, 'B': 4, 'M': 5, 'C': 6, 'E': 7, 'EA': 8, 'EV': 9, 'S': 10, 'D': 11 };
+            const pA = parse(a);
+            const pB = parse(b);
+            const ordA = classOrder[pA.pfx] || 50;
+            const ordB = classOrder[pB.pfx] || 50;
+            if (ordA !== ordB) return ordA - ordB;
+            if (pA.pfx !== pB.pfx) return pA.pfx.localeCompare(pB.pfx);
+            return pA.num - pB.num;
+        }
+
+        function renderAllSeats(seats, filterDirect = false, targetCoach = null) {
+            const container = document.getElementById('tabContentAllSeats');
+            container.innerHTML = '';
+
+            if (targetCoach !== null) {
+                activeCoachFilter = targetCoach;
+            }
+
+            const list = filterDirect ? seats.filter(s => s.is_direct) : [...seats];
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #64748b;">
+                        <p style="font-size: 1.05rem; font-weight: 600;">No seats available for this filter.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Build Coach Map
+            const coachMap = {};
+            list.forEach(seat => {
+                const c = seat.coach || 'Unknown';
+                if (!coachMap[c]) coachMap[c] = [];
+                coachMap[c].push(seat);
+            });
+
+            const sortedCoaches = Object.keys(coachMap).sort(coachNaturalSort);
+
+            // Validate activeCoachFilter
+            if (activeCoachFilter !== 'ALL' && !coachMap[activeCoachFilter]) {
+                activeCoachFilter = 'ALL';
+            }
+
+            // Coach Filter Chips Bar
+            const filterBar = document.createElement('div');
+            filterBar.className = 'coach-filter-bar';
+
+            const filterLabel = document.createElement('span');
+            filterLabel.className = 'coach-filter-label';
+            filterLabel.innerHTML = `🔍 Filter Coach:`;
+            filterBar.appendChild(filterLabel);
+
+            // 'All Coaches' chip
+            const allChip = document.createElement('button');
+            allChip.className = `coach-chip ${activeCoachFilter === 'ALL' ? 'active' : ''}`;
+            allChip.textContent = `All Coaches (${list.length})`;
+            allChip.addEventListener('click', () => {
+                renderAllSeats(seats, filterDirect, 'ALL');
+            });
+            filterBar.appendChild(allChip);
+
+            // Per-coach chips
+            sortedCoaches.forEach(coach => {
+                const chip = document.createElement('button');
+                chip.className = `coach-chip ${activeCoachFilter === coach ? 'active' : ''}`;
+                chip.textContent = `${coach} (${coachMap[coach].length})`;
+                chip.addEventListener('click', () => {
+                    renderAllSeats(seats, filterDirect, coach);
+                });
+                filterBar.appendChild(chip);
+            });
+
+            container.appendChild(filterBar);
+
+            // Determine which coaches to display
+            const coachesToRender = activeCoachFilter === 'ALL' ? sortedCoaches : [activeCoachFilter];
+
+            // Render each coach group
+            coachesToRender.forEach(coach => {
+                const coachSeats = coachMap[coach] || [];
+                // Sort berths numerically
+                coachSeats.sort((a, b) => (parseInt(a.berth, 10) || 0) - (parseInt(b.berth, 10) || 0));
+
+                const section = document.createElement('div');
+                section.className = 'coach-section';
+
+                const header = document.createElement('div');
+                header.className = 'coach-section-header';
+                const classNameBadge = coachSeats[0] && (coachSeats[0].class_name || coachSeats[0].class_type) ?
+                    `<span class="badge" style="margin-left: 8px; background: #e2e8f0; color: #334155;">${coachSeats[0].class_name || coachSeats[0].class_type}</span>` : '';
+                header.innerHTML = `
+                    <div class="coach-section-title">
+                        🚆 Coach <strong style="margin-left: 5px; font-size: 1.05rem;">${coach}</strong>
+                        ${classNameBadge}
+                    </div>
+                    <div class="coach-section-count">
+                        ${coachSeats.length} Berth${coachSeats.length > 1 ? 's' : ''}
+                    </div>
+                `;
+                section.appendChild(header);
+
+                coachSeats.forEach(seat => {
+                    const card = document.createElement('div');
+                    card.className = `seat-card ${seat.is_direct ? 'direct' : ''}`;
+
+                    card.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div class="coach-badge">${seat.coach}</div>
+                            <div>
+                                <h4 style="font-size: 1.02rem; color: #1e293b;">Berth ${seat.berth} &bull; ${seat.berth_type}</h4>
+                                <div style="display: flex; gap: 8px; margin-top: 4px; font-size: 0.82rem;">
+                                    <span class="badge" style="background: #e2e8f0; color: #334155;">${seat.class_name || seat.class_type}</span>
+                                    <span class="badge ${seat.is_direct ? 'badge-100' : 'badge-partial'}">
+                                        ${seat.is_direct ? '🟢 DIRECT FULL JOURNEY' : '🟡 ' + seat.coverage_label}
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.84rem; font-weight: 600; color: #334155; margin-top: 4px;">
+                                    Vacant: ${seat.vacant_from_name} (${seat.vacant_from}) &rarr; ${seat.vacant_to_name} (${seat.vacant_to})
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    section.appendChild(card);
+                });
+
+                container.appendChild(section);
+            });
+        }
+
+        // Tab Switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                const tab = this.getAttribute('data-tab');
+                const splitContent = document.getElementById('tabContentSplit');
+                const allContent = document.getElementById('tabContentAllSeats');
+
+                if (tab === 'split') {
+                    splitContent.style.display = 'flex';
+                    allContent.style.display = 'none';
+                } else if (tab === 'allSeats') {
+                    splitContent.style.display = 'none';
+                    allContent.style.display = 'block';
+                    renderAllSeats(currentResults ? currentResults.greenSeats || [] : [], false, activeCoachFilter);
+                } else if (tab === 'directSeats') {
+                    splitContent.style.display = 'none';
+                    allContent.style.display = 'block';
+                    renderAllSeats(currentResults ? currentResults.greenSeats || [] : [], true, activeCoachFilter);
+                }
+            });
+        });
+
+        // Live Real-Time Monitoring Event Listeners
+        document.getElementById('toggleLiveMonitor').addEventListener('click', function() {
+            isLiveMonitoring = !isLiveMonitoring;
+            if (isLiveMonitoring) {
+                toggleSwitch.classList.add('active');
+                liveDot.classList.add('active');
+                liveStatusText.textContent = 'Live Monitor: Active';
+                startLiveMonitoring();
+            } else {
+                toggleSwitch.classList.remove('active');
+                liveDot.classList.remove('active');
+                liveStatusText.textContent = 'Live Monitor: Inactive';
+                liveCountdown.textContent = '';
+                stopLiveMonitoring();
+            }
+        });
+
+        function startLiveMonitoring() {
+            restartLiveTimer();
+        }
+
+        function stopLiveMonitoring() {
+            clearInterval(liveTimer);
+            clearInterval(countdownTimer);
+        }
+
+        function restartLiveTimer() {
+            clearInterval(liveTimer);
+            clearInterval(countdownTimer);
+
+            const intervalSec = parseInt(document.getElementById('liveInterval').value, 10) || 30;
+            remainingSeconds = intervalSec;
+            updateCountdownText();
+
+            countdownTimer = setInterval(() => {
+                remainingSeconds--;
+                if (remainingSeconds < 0) remainingSeconds = intervalSec;
+                updateCountdownText();
+            }, 1000);
+
+            liveTimer = setInterval(performLiveCheck, intervalSec * 1000);
+        }
+
+        function updateCountdownText() {
+            if (isLiveMonitoring) {
+                liveCountdown.textContent = `(Checking in ${remainingSeconds}s)`;
+            }
+        }
+
+        async function performLiveCheck() {
+            if (!currentResults) return;
+
+            const trainNo = trainNoInput.value.trim();
+            const origin = document.getElementById('origin').value.trim();
+            const destination = document.getElementById('destination').value.trim();
+            const journeyDate = journeyDateInput.value;
+            const classType = document.getElementById('classType').value;
+            const passengers = document.getElementById('passengers').value;
+            const maxOptions = document.getElementById('maxOptions').value;
+
+            try {
+                const res = await apiFetch('/api/live-poll', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        trainNo, origin, destination, journeyDate, classType, passengers, maxOptions,
+                        previousSeatIds: Array.from(knownSeatIds)
+                    })
+                });
+
+                if (!res.ok) return;
+                const data = await res.json();
+
+                if (data.success && data.results) {
+                    const delta = data.delta || {};
+                    if (delta.allottedCount > 0) {
+                        playChime(true);
+                        showToast(`⚠️ TTE Allotment Alert: ${delta.allottedCount} seat(s) just allotted/booked! (${delta.allottedSeats.map(s => s.label).slice(0, 2).join(', ')})`, 'danger');
+                    } else if (delta.newCount > 0) {
+                        playChime(false);
+                        showToast(`🎉 New Vacancy Alert: ${delta.newCount} new seat(s) just opened up!`, 'success');
+                    }
+
+                    // Seamlessly update results
+                    handleSearchResults(data.results);
+                }
+            } catch(e) {}
+        }
+    </script>
+</body>
+</html>

@@ -213,6 +213,7 @@ def run_seat_search(search_id, train_no, origin, destination, journey_date, clas
         search_in_progress[search_id] = False
 
 @app.route('/health', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
 def health():
     return jsonify({
         'status': 'online',

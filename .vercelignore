@@ -1,0 +1,13 @@
+*.py
+*.bat
+*.sh
+requirements.txt
+cloudflared*
+templates/
+__pycache__/
+test_api.py
+bruteforce_seat_check.py
+host_tunnel.py
+setup_ec2.sh
+setup_ubuntu.sh
+run_ubuntu.sh

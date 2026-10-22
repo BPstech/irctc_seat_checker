@@ -5,19 +5,43 @@
 let cachedBackendUrl = process.env.BACKEND_URL || null;
 let lastCacheTime = 0;
 
+async function checkBackendAlive(url) {
+    if (!url) return false;
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
+        const resp = await fetch(`${url.replace(/\/+$/, '')}/health`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return resp.ok;
+    } catch {
+        return false;
+    }
+}
+
 async function resolveBackendUrl() {
-    // 1. If BACKEND_URL environment variable is explicitly set in Vercel, prioritize it
+    // 1. If BACKEND_URL environment variable is explicitly set, prioritize it
     if (process.env.BACKEND_URL && process.env.BACKEND_URL.trim()) {
         return process.env.BACKEND_URL.trim();
     }
 
-    // 2. Return cached tunnel URL if younger than 20 seconds
+    // 2. If running locally (e.g. vercel dev), prioritize local Flask backend on port 5000 if active
+    const isLocal = !process.env.VERCEL || process.env.VERCEL_ENV === 'development';
+    if (isLocal) {
+        const localUrl = 'http://127.0.0.1:5000';
+        if (await checkBackendAlive(localUrl)) {
+            return localUrl;
+        }
+    }
+
+    // 3. Return cached tunnel URL if younger than 20 seconds
     const now = Date.now();
     if (cachedBackendUrl && (now - lastCacheTime < 20000)) {
         return cachedBackendUrl;
     }
 
-    // 3. Auto-resolve the active live PC tunnel URL from the cloud coordinator
+    // 4. Auto-resolve the active live PC tunnel URL from the cloud coordinator
     try {
         const resp = await fetch('https://api.github.com/gists/1d0e0e40f7dd33220e1030f45c2baddf', {
             headers: {
@@ -38,27 +62,34 @@ async function resolveBackendUrl() {
         console.error('Failed to auto-resolve backend URL:', e.message);
     }
 
+    // 5. Fallback to local PC backend if tunnel resolution fails
+    if (await checkBackendAlive('http://127.0.0.1:5000')) {
+        return 'http://127.0.0.1:5000';
+    }
+
     return cachedBackendUrl;
 }
 
 function getOriginalPath(req) {
+    let rawPath = req.url || '';
     const fwdUri = req.headers['x-forwarded-uri'] || req.headers['x-matched-path'];
     if (fwdUri && fwdUri.startsWith('/api') && !fwdUri.startsWith('/api/proxy')) {
-        return fwdUri;
-    }
-    if (req.url && req.url.startsWith('/api') && !req.url.startsWith('/api/proxy')) {
-        return req.url;
-    }
-    if (req.query && (req.query.path || req.query.match)) {
+        rawPath = fwdUri;
+    } else if (req.query && (req.query.path || req.query.match)) {
         const p = req.query.path || req.query.match;
         const subPath = Array.isArray(p) ? p.join('/') : p;
-        const urlObj = new URL(req.url, 'http://localhost');
+        rawPath = `/api/${subPath}`;
+    }
+
+    try {
+        const urlObj = new URL(rawPath, 'http://localhost');
         urlObj.searchParams.delete('path');
         urlObj.searchParams.delete('match');
         const qs = urlObj.searchParams.toString();
-        return `/api/${subPath}${qs ? '?' + qs : ''}`;
+        return `${urlObj.pathname}${qs ? '?' + qs : ''}`;
+    } catch {
+        return rawPath;
     }
-    return req.url;
 }
 
 module.exports = async function handler(req, res) {
@@ -76,6 +107,7 @@ module.exports = async function handler(req, res) {
     const cleanBase = backendBase.replace(/\/+$/, '');
     const apiPath = getOriginalPath(req);
     const targetUrl = `${cleanBase}${apiPath}`;
+    console.log(`[Proxy] Forwarding ${req.method} ${req.url} -> ${targetUrl}`);
 
     try {
         const fetchOptions = {
