@@ -21,6 +21,8 @@ cloudflared.exe
 .env
 .env.local
 .env.*.local
+*.env
+.doppler/
 
 # Vercel build output
 .vercel/
