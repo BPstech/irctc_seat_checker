@@ -284,10 +284,14 @@
             border-radius: 12px;
             font-size: 0.92rem;
             font-weight: 600;
-            display: flex;
             align-items: center;
             justify-content: space-between;
             animation: slideDown 0.3s ease;
+        }
+
+        .alert-toast.visible,
+        .alert-toast.show {
+            display: flex;
         }
 
         @keyframes slideDown {
@@ -903,8 +907,8 @@
         </div>
 
         <!-- Live Change Notification Banner -->
-        <div class="alert-toast" id="liveToast">
-            <span id="toastMessage">Alert text</span>
+        <div class="alert-toast" id="liveToast" style="display: none;">
+            <span id="toastMessage"></span>
             <button onclick="dismissToast()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: inherit;">&times;</button>
         </div>
 
