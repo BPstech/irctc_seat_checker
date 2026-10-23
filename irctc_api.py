@@ -166,6 +166,10 @@ class IRCTCService:
             else:
                 # Quick health check
                 _ = self.driver.title
+                if 'online-charts' not in getattr(self.driver, 'current_url', ''):
+                    logger.warning("Driver not on online-charts page, navigating back...")
+                    self.driver.get('https://www.irctc.co.in/online-charts/')
+                    time.sleep(2)
         except Exception:
             logger.warning("Driver health check failed, re-initializing...")
             self._init_driver()
@@ -175,6 +179,9 @@ class IRCTCService:
         t_key = str(train_no).strip()
         now = time.time()
         cached = self.schedule_cache.get(t_key)
+        if not cached:
+            self._load_cache()
+            cached = self.schedule_cache.get(t_key)
         if cached and (now - cached[0] < 43200):
             return cached[1]
 
@@ -221,6 +228,13 @@ class IRCTCService:
             """
             try:
                 res = self.driver.execute_async_script(js, t_key)
+                # If Failed to fetch occurred (e.g. session stale), refresh session and retry once
+                if not res.get('success') and 'Failed to fetch' in str(res.get('error', '')):
+                    logger.warning("Fetch failed in driver, refreshing online-charts session and retrying...")
+                    self.driver.get('https://www.irctc.co.in/online-charts/')
+                    time.sleep(2)
+                    res = self.driver.execute_async_script(js, t_key)
+
                 if res.get('success'):
                     data = res.get('data', {})
                     if data.get('errorMessage'):

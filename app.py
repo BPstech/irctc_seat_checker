@@ -66,7 +66,7 @@ def get_train_info(train_no):
                 'stations': stations,
                 'classes': classes
             })
-        return jsonify({'success': False, 'message': res.get('message', 'Train not found')}), 404
+        return jsonify({'success': False, 'message': res.get('message', 'Train not found')}), 200
     except Exception as e:
         logger.error(f"Error fetching train info: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
