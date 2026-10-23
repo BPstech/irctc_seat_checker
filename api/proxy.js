@@ -2,16 +2,20 @@
 // Securely and automatically proxies API calls to your Python backend
 // without exposing your local PC IP, tunnel URL, or CRIS endpoints to users.
 
-let cachedBackendUrl = process.env.BACKEND_URL || null;
+const GIST_RAW_URL = 'https://gist.githubusercontent.com/BPstech/1d0e0e40f7dd33220e1030f45c2baddf/raw/backend_url.txt';
+const GIST_API_URL = 'https://api.github.com/gists/1d0e0e40f7dd33220e1030f45c2baddf';
+
+let cachedBackendUrl = null;
 let lastCacheTime = 0;
 
-async function checkBackendAlive(url) {
-    if (!url) return false;
+async function checkBackendAlive(url, timeoutMs = 2000) {
+    if (!url || typeof url !== 'string' || !url.startsWith('http')) return false;
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1500);
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         const resp = await fetch(`${url.replace(/\/+$/, '')}/health`, {
-            signal: controller.signal
+            signal: controller.signal,
+            headers: { 'Accept': 'application/json' }
         });
         clearTimeout(timeoutId);
         return resp.ok;
@@ -20,50 +24,80 @@ async function checkBackendAlive(url) {
     }
 }
 
-async function resolveBackendUrl() {
-    // 1. If BACKEND_URL environment variable is explicitly set, prioritize it
-    if (process.env.BACKEND_URL && process.env.BACKEND_URL.trim()) {
-        return process.env.BACKEND_URL.trim();
-    }
-
-    // 2. If running locally (e.g. vercel dev), prioritize local Flask backend on port 5000 if active
-    const isLocal = !process.env.VERCEL || process.env.VERCEL_ENV === 'development';
-    if (isLocal) {
-        const localUrl = 'http://127.0.0.1:5000';
-        if (await checkBackendAlive(localUrl)) {
-            return localUrl;
-        }
-    }
-
-    // 3. Return cached tunnel URL if younger than 20 seconds
-    const now = Date.now();
-    if (cachedBackendUrl && (now - lastCacheTime < 20000)) {
-        return cachedBackendUrl;
-    }
-
-    // 4. Auto-resolve the active live PC tunnel URL from the cloud coordinator
+async function fetchUrlFromGist() {
+    // 1. Try fast unauthenticated raw Gist URL (immune to GitHub 60 req/hr API rate limits)
     try {
-        const resp = await fetch('https://api.github.com/gists/1d0e0e40f7dd33220e1030f45c2baddf', {
+        const rawResp = await fetch(`${GIST_RAW_URL}?_nocache=${Date.now()}`, {
+            headers: { 'User-Agent': 'IRCTC-Seat-Checker-Proxy' },
+            cache: 'no-store'
+        });
+        if (rawResp.ok) {
+            const text = (await rawResp.text()).trim();
+            if (text && text.startsWith('http')) {
+                return text;
+            }
+        }
+    } catch (e) {
+        console.error('Raw gist fetch error:', e.message);
+    }
+
+    // 2. Fallback to GitHub REST API endpoint
+    try {
+        const apiResp = await fetch(GIST_API_URL, {
             headers: {
                 'User-Agent': 'IRCTC-Seat-Checker-Proxy',
                 'Accept': 'application/vnd.github.v3+json'
             }
         });
-        if (resp.ok) {
-            const data = await resp.json();
+        if (apiResp.ok) {
+            const data = await apiResp.json();
             const content = data.files?.['backend_url.txt']?.content?.trim();
             if (content && content.startsWith('http')) {
-                cachedBackendUrl = content;
-                lastCacheTime = now;
-                return cachedBackendUrl;
+                return content;
             }
         }
     } catch (e) {
-        console.error('Failed to auto-resolve backend URL:', e.message);
+        console.error('GitHub API gist fetch error:', e.message);
     }
 
-    // 5. Fallback to local PC backend if tunnel resolution fails
-    if (await checkBackendAlive('http://127.0.0.1:5000')) {
+    return null;
+}
+
+async function resolveBackendUrl() {
+    const isLocal = !process.env.VERCEL || process.env.VERCEL_ENV === 'development';
+
+    // 1. If running locally (vercel dev), prioritize local Flask backend on port 5000 if active
+    if (isLocal) {
+        const localUrl = 'http://127.0.0.1:5000';
+        if (await checkBackendAlive(localUrl, 1000)) {
+            return localUrl;
+        }
+    }
+
+    const now = Date.now();
+    // 2. Return cached live tunnel if younger than 20s
+    if (cachedBackendUrl && (now - lastCacheTime < 20000)) {
+        return cachedBackendUrl;
+    }
+
+    // 3. Resolve active live PC tunnel from Cloud Coordinator (GitHub Gist)
+    const gistUrl = await fetchUrlFromGist();
+    if (gistUrl) {
+        cachedBackendUrl = gistUrl;
+        lastCacheTime = now;
+        return gistUrl;
+    }
+
+    // 4. Fallback to BACKEND_URL environment variable if set in Vercel
+    if (process.env.BACKEND_URL && process.env.BACKEND_URL.trim()) {
+        const envUrl = process.env.BACKEND_URL.trim();
+        cachedBackendUrl = envUrl;
+        lastCacheTime = now;
+        return envUrl;
+    }
+
+    // 5. Fallback to local PC backend
+    if (await checkBackendAlive('http://127.0.0.1:5000', 1000)) {
         return 'http://127.0.0.1:5000';
     }
 
@@ -71,24 +105,31 @@ async function resolveBackendUrl() {
 }
 
 function getOriginalPath(req) {
-    let rawPath = req.url || '';
     const fwdUri = req.headers['x-forwarded-uri'] || req.headers['x-matched-path'];
     if (fwdUri && fwdUri.startsWith('/api') && !fwdUri.startsWith('/api/proxy')) {
-        rawPath = fwdUri;
-    } else if (req.query && (req.query.path || req.query.match)) {
-        const p = req.query.path || req.query.match;
-        const subPath = Array.isArray(p) ? p.join('/') : p;
-        rawPath = `/api/${subPath}`;
+        return fwdUri;
     }
 
     try {
-        const urlObj = new URL(rawPath, 'http://localhost');
-        urlObj.searchParams.delete('path');
-        urlObj.searchParams.delete('match');
-        const qs = urlObj.searchParams.toString();
-        return `${urlObj.pathname}${qs ? '?' + qs : ''}`;
+        const fullUrl = new URL(req.url || '/', 'http://localhost');
+        let subPath = '';
+        if (req.query && (req.query.path || req.query.match)) {
+            const p = req.query.path || req.query.match;
+            subPath = Array.isArray(p) ? p.join('/') : p;
+        } else if (fullUrl.searchParams.has('match')) {
+            subPath = fullUrl.searchParams.get('match');
+        } else if (fullUrl.searchParams.has('path')) {
+            subPath = fullUrl.searchParams.get('path');
+        }
+
+        fullUrl.searchParams.delete('match');
+        fullUrl.searchParams.delete('path');
+
+        const qs = fullUrl.searchParams.toString();
+        const baseRoute = subPath ? `/api/${subPath.replace(/^\/+/, '')}` : fullUrl.pathname;
+        return `${baseRoute}${qs ? '?' + qs : ''}`;
     } catch {
-        return rawPath;
+        return req.url;
     }
 }
 
@@ -107,7 +148,8 @@ module.exports = async function handler(req, res) {
     const cleanBase = backendBase.replace(/\/+$/, '');
     const apiPath = getOriginalPath(req);
     const targetUrl = `${cleanBase}${apiPath}`;
-    console.log(`[Proxy] Forwarding ${req.method} ${req.url} -> ${targetUrl}`);
+
+    res.setHeader('x-resolved-backend', cleanBase);
 
     try {
         const fetchOptions = {
@@ -133,12 +175,19 @@ module.exports = async function handler(req, res) {
             return res.json(data);
         } else {
             const text = await backendResponse.text();
+            // Guard against Cloudflare or backend returning HTML error page
+            if (text.includes('<!DOCTYPE') || text.includes('<html') || text.includes('<HTML')) {
+                return res.status(backendResponse.status >= 400 ? backendResponse.status : 502).json({
+                    success: false,
+                    message: `Backend returned an HTML error (HTTP ${backendResponse.status}). Please check your PC backend console.`
+                });
+            }
             return res.send(text);
         }
     } catch (err) {
         return res.status(502).json({
             success: false,
-            message: `Could not connect to backend server: ${err.message}. Please verify your PC backend is running.`
+            message: `Could not connect to backend server (${cleanBase}): ${err.message}. Please verify your PC backend is running.`
         });
     }
 };
